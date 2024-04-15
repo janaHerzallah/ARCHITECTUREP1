@@ -1851,6 +1851,8 @@ average_test_value:
     lwc1 $f21, 0($a0)      # Load the floating-point zero into $f21
     lwc1 $f22, 0($a0)      # Load the floating-point zero into $f22
     lwc1 $f23, 0($a0)      # Load the floating-point zero into $f23
+    lwc1 $f24, 0($a0)      # Load the floating-point zero into $f24 #for the BPT second reading
+
 
 
 
@@ -1931,7 +1933,9 @@ find_the_avg:
             div.s $f12, $f20, $f12  # Average for Hgb
             div.s $f13, $f21, $f13  # Average for BGT
             div.s $f14, $f22, $f14  # Average for LDL
+            div.s $f16, $f24, $f15  # Average for BPT #second reading
             div.s $f15, $f23, $f15  # Average for BPT
+            
             
             
                    # Print newline character
@@ -1998,6 +2002,15 @@ find_the_avg:
              li $a0, 10          # Load ASCII value of newline ('\n') into $a0
              syscall 
 
+            mov.s $f12, $f16  # Load average BPT for printing #second reading
+            li $v0, 2         # Print float
+            syscall
+
+
+               # Print newline character
+   	        li $v0, 11          # System call for printing a character
+             li $a0, 10          # Load ASCII value of newline ('\n') into $a0
+             syscall 
 
             j menu
                
@@ -3648,6 +3661,7 @@ copy_testName:
     lb $t0, 0($a0)        # Load the next character from the input string into $t0
     beq $t0, ' ', skipTHESpace # Check for the space character
     beq $t0, '\n', ENDofLine # Check for the end of the line
+    beq $t0, '\0', ENDofLine # Check for the end of the line
 
     sb $t0, 0($a1)        # Store the character in the output string
     addiu $a0, $a0, 1     # Move to the next character in the input string
@@ -3678,6 +3692,7 @@ skipTHESpace:
     
     jal GetUniqeValueOfTestName
 
+    #beq $t0, '\0', extractTestType # If colon, have unique value for each test name 
 extractTestType:
 
     addiu $t2, $t2, 1     # Increment the semicolon counter
@@ -3803,7 +3818,7 @@ doneConvertion:
                 li $t2, 0              # Reset the sum for next ID
                 lb $a1, 0($a0)
                 beq $a1, '\0', buffer_done # Check for end of buffer
-                li $s7, 0 # set the value of s6 to 0 to indicate that the buffer is not done.
+                li $s7, 0 # set the value of s6 to 0 to indicate that th e buffer is not done.
                 jr $ra
 
                 buffer_done:
