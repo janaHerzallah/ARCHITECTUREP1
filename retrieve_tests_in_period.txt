@@ -1,0 +1,476 @@
+retrieve_tests_in_period:
+    # Code to retrieve tests in a given specific period
+    
+    
+li $t9,0 #initialize t9 to store patient id input
+li $s4,0 #initialize s4 to store first year input
+li $v1,0 #initialize v1 to store first month input
+li $s6,0 #initialize s6 to store second year input
+li $s7,0 #initialize s7 to store second month input
+li $t5,0 #initialize s6 to store second year input
+li $t6,0 #initialize s7 to store second month input
+
+
+#----------------enter patient id ---------------------- 
+   
+  # Prompt user for medical data
+    li $v0, 4            # Print string syscall
+    la $a0, patient_id_prompt
+    syscall
+    
+    
+    # Read integer input from user
+    li $v0, 5            # Read integer syscall
+    syscall
+    move $t9, $v0        # Move the input integer to $t9
+#----------------enter the first date---------------------- 
+
+  # Prompt user for the first year
+li $v0, 4            # Print string syscall
+la $a0, first_date_prompt
+syscall
+
+      
+    # Prompt user for the first year
+li $v0, 4            # Print string syscall
+la $a0, year_prompt
+syscall
+
+# Read integer input for the first year from user
+li $v0, 5            # Read integer syscall
+syscall
+move $s4, $v0       # Move the input year to $t10
+
+# Prompt user for the first month
+li $v0, 4            # Print string syscall
+la $a0, month_prompt
+syscall
+
+# Read integer input for the first month from user
+li $v0, 5            # Read integer syscall
+syscall
+move $v1, $v0       # Move the input month to $t11
+
+
+#----------------enter the second period---------------------- 
+
+  # Prompt user for the first year
+li $v0, 4            # Print string syscall
+la $a0, second_date_prompt
+syscall
+
+# Prompt user for the second year
+li $v0, 4            # Print string syscall
+la $a0, year_prompt
+syscall
+
+# Read integer input for the second year from user
+li $v0, 5            # Read integer syscall
+syscall
+move $s6, $v0       # Move the input year to $t12
+
+# Prompt user for the second month
+li $v0, 4            # Print string syscall
+la $a0, month_prompt
+syscall
+
+# Read integer input for the second month from user
+li $v0, 5            # Read integer syscall
+syscall
+move $s7, $v0       # Move the input month to $t13
+
+#-----------------------start with finding available patient periods ---------------------------         
+        
+   # Load the address of the buffer into $a3
+    la $a3, buffer
+    
+    # Initialize index for storing IDs in the array
+    li $t0, 0
+    
+    li $t3, 0x3A    # ASCII value for ':
+     
+    
+    # Initialize the flag register (this to make sure if the id stored to go to the next id
+    li $t7, 0
+    
+     li $a1, 0
+     
+        move $t0, $zero # $t0 is now zero
+mult $t0, $zero # the result of the multiplication is zero, stored in `lo` and `hi`
+mflo $31       # move the result from `lo` to `lo`, this is effectively a reset
+
+    
+iterate_file_lines:
+
+#-----------------------------------
+#start reading id in each line :
+#-----------------------------------
+   
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    # Check if the byte is null terminator '\0'
+    beq $a1, $zero, end_file   # If null terminator found, end parse loop
+    
+    
+    # Check if flag t7 is 0 ; if it is 0 then extract the id  by going to continue_parsing  and then check if it is equal to the input id
+    #if it is 1  go to the next line to extract new id 
+    beq $t7, $zero, combine_id
+    
+    
+    
+    
+    # Walk in the buffer until "\n" is found
+skip_till_newline:
+    # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    # Check if the byte is null terminator '\0'
+    beq $a1, $zero, end_file   # If null terminator found, end parse loop
+    
+    
+    # Check if the byte is newline character '\n'
+    li $t8, 0x0A    # ASCII value for '\n'
+    beq $a1, $t8, reset_flag_to_compine_new_id    # If newline found, reset flag and continue parsing
+    
+    # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+    
+    j skip_till_newline
+
+reset_flag_to_compine_new_id:
+    # Reset flag t7
+    li $t7, 0
+    
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    # Check if the byte is null terminator '\0'
+    beq $a1, $zero, end_file  # If null terminator found, end parse loop
+    
+    # Continue parsing loop
+    j iterate_file_lines
+
+combine_id:
+    # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    # Check if the byte is a digit or a (:) colon
+    li $t1, 0x30    # ASCII value for '0'
+    beq $a1, $t3, the_id_is_in_t4
+    
+    # Store str
+    # Store date
+    # Store result
+    
+    blt $a1, $t1, next_byte
+    
+    # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t4, $t4, 10   # Multiply current ID by 10
+    add $t4, $t4, $a1  # Add new digit to ID
+    
+    # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+    
+    # Repeat the loop
+    j iterate_file_lines
+
+next_byte:
+    # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+    
+    # Repeat the loop
+    j iterate_file_lines
+    
+  
+    
+the_id_is_in_t4:
+
+    #brint the line if the id = user input
+      beq $t4, $t9, desired_id      # Branch to equal_branch if $t4 is equal to $t9
+    # Code to execute if $t4 is not equal to $t9
+    j next_line              # Jump to next_instruction
+
+desired_id :
+
+#-----------------------------------
+#extract the year and month from desired line to check then its period
+# year -> t5 ,   month  -> t6
+#-----------------------------------
+
+
+
+   # Reset $t5, t6 for each line
+    li $t5, 0
+    li $t6, 0
+    
+   # Move to the year byte in the buffer
+    addi $a3, $a3, 7
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t5, $t5, 10   # Multiply current ID by 10
+    add $t5, $t5, $a1  # Add new digit to ID
+    
+    
+    # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $t5       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+    
+    
+    # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t5, $t5, 10   # Multiply current ID by 10
+    add $t5, $t5, $a1  # Add new digit to ID
+    
+    
+     # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $t5       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+
+ # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t5, $t5, 10   # Multiply current ID by 10
+    add $t5, $t5, $a1  # Add new digit to ID
+    
+     # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $t5       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+    
+     # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+  
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t5, $t5, 10   # Multiply current ID by 10
+    add $t5, $t5, $a1  # Add new digit to ID
+    
+     # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $t5       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+    
+#---------------------year is ready---------------------------
+    
+     # Move to the year byte in the buffer
+    addi $a3, $a3, 2
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t6, $t6, 10   # Multiply current ID by 10
+    add $t6, $t6, $a1  # Add new digit to ID
+    
+    
+      
+     # Move to the year byte in the buffer
+    addi $a3, $a3, 1
+     # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+    
+    
+     # Convert ASCII digit to integer and add to ID
+    sub $a1, $a1, $t1  # Convert ASCII to integer
+    mul $t6, $t6, 10   # Multiply current ID by 10
+    add $t6, $t6, $a1  # Add new digit to ID
+    
+    
+    # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $t6       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+#---------------------month is also ready---------------------------
+
+
+#------------check period logic -----------
+
+
+# Check if the date in t5/t6 falls within the period defined by s4/v1/s6/s7
+# year in t5, month in t6
+# least date in s4, v1; large date in s6, s7
+
+
+# Check if the date is within the specified period
+
+# Compare with the least year
+bge $t5, $s4, check_large_year # If t5 (year) is greater than or equal to s4 (least year), check large year
+b date_out_of_range # If t5 (year) is less than s4 (least year), it's out of range
+
+check_large_year:
+# Compare with the large year
+ble $t5, $s6, check_month # If t5 (year) is less than or equal to s6 (large year), check month
+b date_out_of_range # If t5 (year) is greater than s6 (large year), it's out of range
+
+check_month:
+# Check if the month is within range
+# If the year is within the range, then check the month
+
+# Compare with the least month if the year is equal to the least year
+beq $t5, $s4, check_least_month
+
+# Compare with the large month if the year is equal to the large year
+beq $t5, $s6, check_large_month
+
+# If the year is between the least and large years, the month is within range
+b within_month_range
+
+check_least_month:
+# If the year is equal to the least year, compare with the least month
+bge $t6, $v1, within_month_range # If t6 (month) is greater than or equal to v1 (least month), it's within range!!!
+b date_out_of_range # If t6 (month) is less than v1 (least month), it's out of range
+
+check_large_month:
+# If the year is equal to the large year, compare with the large month
+ble $t6, $s7, within_month_range # If t6 (month) is less than or equal to s7 (large month), it's within range
+b date_out_of_range # If t6 (month) is greater than s7 (large month), it's out of range
+
+within_month_range:
+# The given date is within the specified period
+ jal print_specific_line        # Call print_specific_line if $t4 is equal to $t9
+
+date_out_of_range:
+# The given date is outside the specified period
+# complete with next line
+
+
+
+next_line:
+    
+    # Reset $t4 for next ID
+    li $t4, 0
+    
+    
+    # Continue with the next instruction
+    
+    #jal print_specific_line
+    
+
+    # Increment loop counter
+    addi $t0, $t0, 1
+    
+    
+    # Move to the next byte in the buffer
+    addi $a3, $a3, 1
+    
+       # Load a byte from memory into $a1
+    lb $a1, 0($a3)
+	
+	# Set flag to indicate an ID has been found
+    li $t7, 1
+
+
+    # Continue parsing loop
+    j iterate_file_lines
+
+end_file:
+
+  # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $s4       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+
+    
+      # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $v1      # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+      # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $s6       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+    
+    
+      # Print the content of $t5
+    li $v0, 1           # System call for print integer
+    move $a0, $s7       # Move the content of $t4 to $a0 for printing
+    syscall
+
+    # Print new line
+    li $v0, 4           # System call for print string
+    la $a0, newline     # Load the address of the new line string
+    syscall
+   
+ 
+    j search_test_by_id
+
+return_to_main_menu:
+    # Code to return to the main menu
+    j menu
+
+
+
+
+
+    
+ 
