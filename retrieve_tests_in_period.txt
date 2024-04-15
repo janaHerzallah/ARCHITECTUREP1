@@ -1,3 +1,16 @@
+
+
+
+patient_id_prompt: .asciiz "\nEnter patient ID, make sure the id is contains 7 integer digits :\n"
+
+year_prompt: .asciiz "\nEnter year (as 4 digits yyyy):"
+month_prompt: .asciiz "\nEnter month (as 2 digits mm): "
+first_date_prompt: .asciiz "\nEnter the first date (YYYY-MM)"
+second_date_prompt: .asciiz "\nEnter the second date (YYYY-MM)"
+
+
+
+
 retrieve_tests_in_period:
     # Code to retrieve tests in a given specific period
     
@@ -93,11 +106,11 @@ move $s7, $v0       # Move the input month to $t13
     # Initialize the flag register (this to make sure if the id stored to go to the next id
     li $t7, 0
     
-     li $a1, 0
+    li $a1, 0
      
-        move $t0, $zero # $t0 is now zero
-mult $t0, $zero # the result of the multiplication is zero, stored in `lo` and `hi`
-mflo $31       # move the result from `lo` to `lo`, this is effectively a reset
+    move $t0, $zero # $t0 is now zero
+    mult $t0, $zero # the result of the multiplication is zero, stored in `lo` and `hi`
+    mflo $31       # move the result from `lo` to `lo`, this is effectively a reset
 
     
 iterate_file_lines:
@@ -120,7 +133,11 @@ iterate_file_lines:
     
     
     # Walk in the buffer until "\n" is found
+
+
+
 skip_till_newline:
+
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
     
