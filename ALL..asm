@@ -123,8 +123,8 @@ zero_float: .float 0.0   # Define a floating point zero constant in data segment
     upperBoundSystolicBPT: .float 120.0
     upperBoundDiastolicBPT: .float 80.0
     
-    inputPrompt: .asciiz "\nEnter the Patient ID'): "  
-    inputBuffer_ID: .space 11  # Buffer for search id 
+    IDenteringPrompt: .asciiz "\nEnter the Patient ID'): "  
+    enteredID: .space 11  # Buffer FOR ENTERED ID
     error_msg: .asciiz "Failed to open the file.\n"
     
     
@@ -310,13 +310,13 @@ end_read:
 	syscall
 
 # Save register values onto the stack
-subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
+    subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
 
-sw $t0, 4($sp)         # Save $a3
+    sw $t0, 4($sp)         # Save $a3   
 
-jal validate_id
+    jal validate_id
 
-lw $t0, 4($sp)  
+    lw $t0, 4($sp)  
 
 # Append patient ID to output_string
 	move $s0, $zero       # Initialize index for output_string
@@ -330,7 +330,7 @@ lw $t0, 4($sp)
 	addi $s2, $s2, 1        # Increment string length counter
 
 
-addi $s1, $s1, 1           # Increment index for output_string
+    addi $s1, $s1, 1           # Increment index for output_string
 
 
 
@@ -348,26 +348,26 @@ append_loop_id:
 end_append_id:
 
 # Append ": " after patient ID
-li $t0, ':'              # Load colon character
-sb $t0, 0($s1)           # Store colon character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ':'              # Load colon character
+    sb $t0, 0($s1)           # Store colon character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
-# Prompt user for test name
-li $v0, 4
-la $a0, test_value_prompt
-syscall
+    # Prompt user for test name
+    li $v0, 4
+    la $a0, test_value_prompt
+    syscall
 
-li $v0, 8
-la $a0, test_name
-li $a1, 20
-syscall
+    li $v0, 8
+    la $a0, test_name
+    li $a1, 20
+    syscall
 
 # Append test name to output_string
-move $s0, $zero       # Reset index for test_name
-append_loop_test_name:
+    move $s0, $zero       # Reset index for test_name
+    append_loop_test_name:
     lb $t0, test_name($s0)     # Load byte from test_name
     beq $t0, 10, end_append_test_name # Check if byte is newline character
 
@@ -379,26 +379,26 @@ append_loop_test_name:
 end_append_test_name:
 
 # Append ", " after test name
-li $t0, ','              # Load comma character
-sb $t0, 0($s1)           # Store comma character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ','              # Load comma character
+    sb $t0, 0($s1)           # Store comma character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
 # Prompt user for year
-li $v0, 4
-la $a0, year_prompt
-syscall
+    li $v0, 4
+    la $a0, year_prompt
+    syscall
 
-li $v0, 8
-la $a0, year_buffer
-li $a1, 6           # Maximum length of year
-syscall
+    li $v0, 8
+    la $a0, year_buffer
+    li $a1, 6           # Maximum length of year
+    syscall
 
 # Append year to output_string
-move $s0, $zero       # Reset index for year_buffer
-append_loop_year:
+    move $s0, $zero       # Reset index for year_buffer
+    append_loop_year:
     lb $t0, year_buffer($s0)   # Load byte from year_buffer
     beq $t0, 10, end_append_year # Check if byte is newline character
 
@@ -410,22 +410,22 @@ append_loop_year:
 end_append_year:
 
 # Append "-" after year
-li $t0, '-'              # Load dash character
-sb $t0, 0($s1)           # Store dash character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, '-'              # Load dash character
+    sb $t0, 0($s1)           # Store dash character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
 # Prompt user for month
-li $v0, 4
-la $a0, month_prompt
-syscall
+    li $v0, 4
+    la $a0, month_prompt
+    syscall
 
-li $v0, 8
-la $a0, month_buffer
-li $a1, 6          # Maximum length of month
-syscall
+    li $v0, 8
+    la $a0, month_buffer
+    li $a1, 6          # Maximum length of month
+    syscall
 
 # Append month to output_string
-move $s0, $zero       # Reset index for month_buffer
+    move $s0, $zero       # Reset index for month_buffer
 append_loop_month:
     lb $t0, month_buffer($s0)   # Load byte from month_buffer
     beq $t0, 10, end_append_month # Check if byte is newline character
@@ -438,28 +438,28 @@ append_loop_month:
 end_append_month:
 
 # Append ", " after month
-li $t0, ','              # Load comma character
-sb $t0, 0($s1)           # Store comma character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ','              # Load comma character
+    sb $t0, 0($s1)           # Store comma character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
 
 
- li $v0, 4
+    li $v0, 4
     la $a0, result_prompt
     syscall
 
-     li $v0, 8
+    li $v0, 8
     la $a0, test_result
     li $a1, 8            # Maximum length of date
     syscall
     
     
       # Append test result to output_string
-    move $s0, $zero       # Reset index for test_result
-    append_loop_result:
+        move $s0, $zero       # Reset index for test_result
+append_loop_result:
         lb $t0, test_result($s0)   # Load byte from test_result
         beq $t0, 10, end_append_result
         sb $t0, 0($s1)             # Store byte to output_string
@@ -467,20 +467,20 @@ addi $s1, $s1, 1         # Increment index for output_string
         addi $s1, $s1, 1           # Increment index for output_string
         j append_loop_result
 
-    end_append_result:
+end_append_result:
     
     
 
 # Print output_string
-li $v0, 4           # Print string syscall
-la $a0, output_string
-syscall
+    li $v0, 4           # Print string syscall
+    la $a0, output_string
+    syscall
     
    
    
    # Calculate the length of the output_string
-move $s2, $zero         # Initialize counter for string length
-la $s3, output_string   # Load address of output_string
+    move $s2, $zero         # Initialize counter for string length
+    la $s3, output_string   # Load address of output_string
 
 calc_string_lengthh:
     lb $t0, 0($s3)      # Load byte from output_string
@@ -509,7 +509,6 @@ end_calc_string_lengthh:
 	syscall
     
     
-
     # Close file
     li $v0, 16           # Close syscall
     move $a0, $s0        # File descriptor
@@ -531,7 +530,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 2000
    
-   jal clear_loop
+    jal clear_loop
    
    
     # clear_buffer
@@ -541,7 +540,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
     # clear_buffer
@@ -551,7 +550,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
    # clear_buffer
@@ -561,17 +560,17 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
-   # clear_buffer
+    # clear_buffer
     # Load the address of the buffer into a register
     la $t0, year_buffer
     
     # Set the number of bytes to clear
     li $t1, 5
    
-   jal clear_loop
+    jal clear_loop
    
    
     
@@ -582,9 +581,9 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 3
    
-   jal clear_loop
+    jal clear_loop
    
-   
+
    
    # clear_buffer
     # Load the address of the buffer into a register
@@ -593,7 +592,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 8
    
-   jal clear_loop
+    jal clear_loop
    
    
    
@@ -603,7 +602,7 @@ end_calc_string_lengthh:
     syscall
    
    
-     jal readtestFile      # Call the readtestFile function
+    jal readtestFile      # Call the readtestFile function
      
      
        # Prompt user for medical data
@@ -618,18 +617,13 @@ end_calc_string_lengthh:
     syscall
    
      
-    
-   
-     
-     
-     
-     
-     
-   
+
 
     j menu
     
+    ##########################################################################################################
     
+ #function to clear the any string to reuse it again   
  clear_loop:
     # Store zero (null terminator) at the current address in the buffer
     sb $zero, ($t0)
@@ -646,7 +640,7 @@ end_calc_string_lengthh:
     jr $ra  # Return from the subroutine
 
 
-
+    #############################################################################################################
 
     
 search_test_by_id:
@@ -674,6 +668,7 @@ search_test_by_id:
     j invalid_choiceee
 
 retrieve_all_tests:
+
     # Code to retrieve all patient tests
     
     
@@ -705,7 +700,7 @@ retrieve_all_tests:
     # Initialize the flag register (this to make sure if the id stored to go to the next id
     li $t7, 0
     
-       li $a1, 0
+    li $a1, 0
 
     
 parse_loop:
@@ -725,9 +720,9 @@ parse_loop:
     beq $t7, $zero, continue_parsing
     
     
-    
-    
     # Walk in the buffer until "\n" is found
+
+
 search_newline:
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
@@ -758,6 +753,7 @@ reset_flag:
     j parse_loop
 
 continue_parsing:
+
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
     
@@ -783,6 +779,7 @@ continue_parsing:
     j parse_loop
 
 next_iteration:
+
     # Move to the next byte in the buffer
     addi $a3, $a3, 1
     
@@ -811,6 +808,7 @@ store_id:
     j next_instruction              # Jump to next_instruction
 
 equal_branch:
+
     jal print_specific_line        # Call print_specific_line if $t4 is equal to $t9
 
 next_instruction:
@@ -933,135 +931,138 @@ retrieve_abnormal_tests:
 
 
 
-
-
-  # Prompt user for the test ID
+  # Prompt user for the patient ID
     li $v0, 4
-    la $a0, inputPrompt
+    la $a0, IDenteringPrompt
     syscall
 
-    # Read the test ID as a string
+    # Read the patient ID as a string
     li $v0, 8
-    la $a0, inputBuffer_ID
+    la $a0, enteredID
     li $a1, 20
     syscall
 
 
-li $s7, 0 # Initialize the flag to 0
-la $a0, buffer # Load the address of the buffer into $a0
+    li $s7, 0 # s7= 0 means the end of the file is not reached yet
+    la $a0, buffer # a0 points to the start of the buffer
 
 
-cheack_file_IDs:
+check_IDs_infile:
 
-    move $t9, $a0 # Save the address of the start of the buffer in $t7
+    move $t9, $a0 # Save the address of the start of the buffer in $t9
 
-    jal BoolIDCheck # f(a0 , inputbuffer_ID) retrun 1 in t5 if the ID is equal to the inputBuffer_ID
+    jal doesIDexistinthefile #  retrun 1 in t5 if the ID is equal to the enteredID
 
-    #if the t5 = 1 mean the ID is equal to the inputBuffer_ID
-    #else the ID is not equal to the inputBuffer_ID
+    #if the t5 = 1 mean the ID is equal to the enteredID
+    #else the ID is not equal to the enteredID
 
-    beq $t5, 1, check_test_resultNormal
-    jal get_next_line
+    #if the ID entered by the user is found in hte file then branch to check_if_test_isNormal
+
+    beq $t5, 1, check_if_test_isNormal
+    jal gotoNEXTline
     beq $s7, 1, menu
-    j cheack_file_IDs
+    j check_IDs_infile
 
 
 
-  
-    # Logic for printing the data after ID match
+    ################################################################normal range for each test#######################################
 
-    #normal range for each test
+    # Normal range for each test:
     #1. Hemoglobin (Hgb): 13.8 to 17.2 grams per deciliter 
+
     #2. Blood Glucose Test (BGT): Normal Range Between 70 to 99 milligrams per deciliter (mg/dL) 
+
     #3. LDL Cholesterol Low-Density Lipoprotein (LDL): Normal Range Less than 100 mg/dL
+
     #4. Blood Pressure Test (BPT): Normal Range: Systolic Blood Pressure: Less than 120 millimeters of 
     #   mercury (mm Hg). Diastolic Blood Pressure: Less than 80 mm Hg 
 
-check_test_resultNormal: 
+    ################################################################normal range for each test#######################################
+
+check_if_test_isNormal: 
 
             move $a0, $t9          # Load the address of the start of the line into $a0
-            jal line_test_values # f(a0) retrun F1 = test result in floating point, t4 = type of test, a0 = start of the next line
+            jal line_test_values 
 
-            #-----------------------------------sum the values of the test result to calculate the average--------------------------------
-            
-            beq $t4, 1, Hgb_test_Normal
-            beq $t4, 2, BGT_test_Normal
-            beq $t4, 3, LDL_test_Normal
-            beq $t4, 4, BPT_test_Normal
+           #this function returns the test result in $f1 , the type of test in $t4 and the address of the start of the next line in $a0
+
+            beq $t4, 1, HgbNormal
+            beq $t4, 2, BGTNormal
+            beq $t4, 3, LDLNormal
+            beq $t4, 4, BPTNormal
 
 
-            Hgb_test_Normal:
+            HgbNormal:
                             lwc1 $f3, lowerBoundHgb # Load the lower bound value, which is 13.8
                             lwc1 $f4, upperBoundHgb # Load the upper bound value, which is 17.2
 
                             c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t if_it_unnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                            bc1t ResultUNnormal   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                             c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t if_it_unnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                            bc1t ResultUNnormal   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
                             move $a0, $t9           # Load the address of the start of the line into $a0
                             jal printLine             # Jump to printLine to print the data for this line
                             
                             beq $s7, 1, menu # If the end of the file is reached, return to the menu
-                            j cheack_file_IDs       # Continue to check file IDs							
+                            j check_IDs_infile       # Continue to check file IDs							
                                                         
                                     
-                    
-            BGT_test_Normal:
+            BGTNormal:
 
                            lwc1 $f3, lowerBoundBGT # Load the lower bound value is 70.0
                            lwc1 $f4, upperBoundBGT # Load the upper bound value is 99.0
 
                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                           bc1t if_it_unnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                           bc1t ResultUNnormal   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                            c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                           bc1t if_it_unnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                           bc1t ResultUNnormal   # If the test result is greater than the upper bound, branch to ResultUNnormal
                            
                            move $a0, $t9          # Load the address of the start of the line into $a0
                            jal printLine          # f(a0) print the data for this line 
 
                            beq $s7, 1, menu
-                           j  cheack_file_IDs                                        
-
-            LDL_test_Normal:
+                           j  check_IDs_infile             
+                           
+                           
+            LDLNormal:
 
                             lwc1 $f4, upperBoundLDL  # Load the upper bound value of 100.0 into $f3
                             c.le.s $f4, $f1          # Compare the test result in $f1 with the upper bound in $f3
-                            bc1t if_it_unnormal    # If $f1 is not less than or equal to $f3 (i.e., $f1 is greater than $f3), branch to end_findNextLine
+                            bc1t ResultUNnormal    # If $f1 is not less than or equal to $f3 (i.e., $f1 is greater than $f3), branch to end_findNextLine
 
                             move $a0, $t9          # Load the address of the start of the line into $a0
                             jal printLine          # f(a0) print the data for this line 
 
                             beq $s7, 1, menu
-                            j  cheack_file_IDs         
+                            j  check_IDs_infile         
                         		
-            BPT_test_Normal: 
+            BPTNormal: 
                             lwc1 $f4, upperBoundSystolicBPT # Load the upper bound value is 120.0
                             lwc1 $f3, upperBoundDiastolicBPT # Load the upper bound value is 80.0
 
                             c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t if_it_unnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                            bc1t ResultUNnormal   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                             c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t if_it_unnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                            bc1t ResultUNnormal   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
                             move $a0, $t9          # Load the address of the start of the line into $a0
                             jal printLine         # f(a0) print the data for this line(normal data)
 
                             beq $s7, 1, menu
-                            j  cheack_file_IDs
+                            j  check_IDs_infile
 
 
-    if_it_unnormal:
+    ResultUNnormal:
     
                   move $a0, $t9          # Load the address of the start of the line into $a0  
-                  jal get_next_line
-                  j cheack_file_IDs
+                  jal gotoNEXTline
+                  j check_IDs_infile
 
-                                                    
-                            
+                                                             
                         
     j menu
 	
@@ -1551,12 +1552,12 @@ search_unnormal_tests:
 
   # Prompt user for the test ID
     li $v0, 4
-    la $a0, inputPrompt
+    la $a0, IDenteringPrompt
     syscall
 
     # Read the test ID as a string
     li $v0, 8
-    la $a0, inputBuffer_ID
+    la $a0, enteredID
     li $a1, 20
     syscall
 
@@ -1565,19 +1566,19 @@ li $s7, 0 # Initialize the flag to 0
 la $a0, buffer # Load the address of the buffer into $a0
 
 
-cheack_file_IDs_unnormal:
+check_IDs_infile_unnormal:
 
     move $t9, $a0 # Save the address of the start of the buffer in $t7
 
-    jal BoolIDCheck # f(a0 , inputbuffer_ID) retrun 1 in t5 if the ID is equal to the inputBuffer_ID
+    jal doesIDexistinthefile # f(a0 , enteredID) retrun 1 in t5 if the ID is equal to the enteredID
 
-    #if the t5 = 1 mean the ID is equal to the inputBuffer_ID
-    #else the ID is not equal to the inputBuffer_ID
+    #if the t5 = 1 mean the ID is equal to the enteredID
+    #else the ID is not equal to the enteredID
 
     beq $t5, 1, check_test_resultUnnormal
-    jal get_next_line
+    jal gotoNEXTline
     beq $s7, 1, menu
-    j cheack_file_IDs_unnormal
+    j check_IDs_infile_unnormal
 
 
 
@@ -1598,80 +1599,80 @@ check_test_resultUnnormal:
 
             #-----------------------------------sum the values of the test result to calculate the average--------------------------------
             
-            beq $t4, 1, Hgb_test_unnormal
-            beq $t4, 2, BGT_test_unnormal
-            beq $t4, 3, LDL_test_unnormal
-            beq $t4, 4, BPT_test_unnormal
+            beq $t4, 1, HgBUNnormal
+            beq $t4, 2, BGTUNnormal
+            beq $t4, 3, LDLUNnormal
+            beq $t4, 4, BPTUNnormal
 
 
-            Hgb_test_unnormal:
+            HgBUNnormal:
             
                             lwc1 $f3, lowerBoundHgb # Load the lower bound value, which is 13.8
                             lwc1 $f4, upperBoundHgb # Load the upper bound value, which is 17.2
 
                             c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t printIfUnnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                            bc1t UNnormalPrinting   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                             c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t printIfUnnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                            bc1t UNnormalPrinting   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
 
                        
                             
                             beq $s7, 1, menu  # If the end of the file is reached, return to the menu
-                            j cheack_file_IDs_unnormal       # Continue to check file IDs							
+                            j check_IDs_infile_unnormal       # Continue to check file IDs							
                                                         
                                     
                     
-            BGT_test_unnormal:
+            BGTUNnormal:
 
                            lwc1 $f3, lowerBoundBGT # Load the lower bound value is 70.0
                            lwc1 $f4, upperBoundBGT # Load the upper bound value is 99.0
 
                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                           bc1t printIfUnnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                           bc1t UNnormalPrinting   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                            c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                           bc1t printIfUnnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                           bc1t UNnormalPrinting   # If the test result is greater than the upper bound, branch to ResultUNnormal
                            
 
                            beq $s7, 1, menu
-                           j  cheack_file_IDs_unnormal                                        
+                           j  check_IDs_infile_unnormal                                        
 
-            LDL_test_unnormal:
+            LDLUNnormal:
 
  
                             lwc1 $f4, upperBoundLDL  # Load the upper bound value of 100.0 into $f3
                             c.le.s $f4, $f1          # Compare the test result in $f1 with the upper bound in $f3
-                            bc1t printIfUnnormal    # If $f1 is not less than or equal to $f3 (i.e., $f1 is greater than $f3), branch to end_findNextLine
+                            bc1t UNnormalPrinting    # If $f1 is not less than or equal to $f3 (i.e., $f1 is greater than $f3), branch to end_findNextLine
                            
                             beq $s7, 1, menu
-                            j  cheack_file_IDs_unnormal         
+                            j  check_IDs_infile_unnormal         
                         		
-            BPT_test_unnormal: 
+            BPTUNnormal: 
 
                             lwc1 $f4, upperBoundSystolicBPT # Load the upper bound value is 120.0
                             lwc1 $f3, upperBoundDiastolicBPT # Load the upper bound value is 80.0
 
                             c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t printIfUnnormal   # If the test result is less than the lower bound, branch to if_it_unnormal
+                            bc1t UNnormalPrinting   # If the test result is less than the lower bound, branch to ResultUNnormal
 
                             c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t printIfUnnormal   # If the test result is greater than the upper bound, branch to if_it_unnormal
+                            bc1t UNnormalPrinting   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
 
                             beq $s7, 1, menu
-                            j  cheack_file_IDs_unnormal
+                            j  check_IDs_infile_unnormal
 
 
 
-              printIfUnnormal:
+              UNnormalPrinting:
                   
                             move $a0, $t9           # Load the address of the start of the line into $a0
                             jal printLine             # Jump to printLine to print the data for this line
                             
                             beq $s7, 1, menu  # If the end of the file is reached, return to the menu
-                            j cheack_file_IDs_unnormal       # Continue to check file IDs			
+                            j check_IDs_infile_unnormal       # Continue to check file IDs			
 
                                     
 
@@ -1682,23 +1683,25 @@ check_test_resultUnnormal:
 
 
 
-#---------------------------------------Check Id is equal to the inputBuffer_ID-------------------------
+####################################
+#this function checks if the entered ID equals the ID in each line of the file
+#it rerturns 1 if id is equal to the enteredI, 0 otherwise
 
-BoolIDCheck:
+doesIDexistinthefile:
 
-# f(a0, inputbuffer ) Return --> in t5 = 1 if the ID is equal to the inputBuffer_ID, 0 otherwise
 # a0 for the line .
 
-    move $t8, $ra # save the return address
+    move $t8, $ra # save the return address so it doesn't get messed up
 
-    move $t7 , $a0 # save the address of the line in t7
+    move $t7 , $a0 # the current line pointed by a0 is saved in t7
 
     # Search for the test ID in the buffer
   
- # Initialize $t3 with 0 for summing ASCII values of inputBuffer_ID
+    # Initialize $t3 with 0 for summing ASCII values of enteredID
+
     li $t3, 0
-    la $a0, inputBuffer_ID
-    jal calculateSum       # Calculate sum of ASCII values in inputBuffer_ID
+    la $a0, enteredID
+    jal calculateSum       # Calculate sum of ASCII values in enteredID
     move $t5, $v0          # Move result to $t5
 
 
@@ -1731,12 +1734,12 @@ values_equal_OF_IDS :
 
 
 
-#---------------------------------------End of Check Id is equal to the inputBuffer_ID------------------
+#---------------------------------------End of Check Id is equal to the enteredI------------------
 
 
 
 
-#------------------------calculate the sum of the ASCII values in the inputBuffer_ID--------------
+#------------------------calculate the sum of the ASCII values in the enteredI--------------
 calculateSum:
     # Input: $a0 (address of the string)
     # Output: $v0 (sum of ASCII values)
@@ -1752,7 +1755,7 @@ end_sum:
     jr $ra                 # Return with sum in $v0
 
 
-#-------------------------------------End of calculate the sum of the ASCII values in the inputBuffer_ID----------------
+#-------------------------------------End of calculate the sum of the ASCII values in the enteredI----------------
 
 
 #print the line of the file
@@ -1796,16 +1799,16 @@ doneFile:
 
 
 #-----------------------------------function to get the next line--------------------------------------------      
-get_next_line:
+gotoNEXTline:
     # f(a0) return --> in a0 the start of the next line , s7 = 1 if the buffer is done, 0 otherwise
 
     lb $a1 , 0($a0) # Load the next character from the buffer into $a1
     beq $a1, '\0', noNextLIne  # End of data for this line
-    beq $a1, '\n', done_get_next_line  # End of data for this line
+    beq $a1, '\n', done_gotoNEXTline  # End of data for this line
     addiu $a0, $a0, 1      # Move to the next character in buffer
-    j get_next_line         # Continue printing data
+    j gotoNEXTline         # Continue printing data
 
-   done_get_next_line: 
+   done_gotoNEXTline: 
     addiu $a0, $a0, 1      # Move to the next line
     lb $a1 , 0($a0) # Load the next character from the buffer into $a1
     beq $a1, '\0', noNextLIne  # End of data for this line
@@ -3420,8 +3423,7 @@ exit:
     # Exit replacement
 
 
- 
-    
+
     
   # Open the output file for writing
 li $v0, 13              # syscall code for open
@@ -3625,36 +3627,36 @@ line_test_values:
     move $t8, $ra # save the return address
 
 
-find_semicolon:
+find_semicoloonn:
 
     lb $t0, 0($a0)        # Load the next character from the input string into $t0
     beq $t0, ':', determine_test_name # If colon, check if ID matches
     li $t1, ','           # Load the ASCII value of semicolon into $t1
     beq $t0, $t1, increment_counterrr # If the current character is a semicolon, increment the counter
     addiu $a0, $a0, 1     # Move to the next character in the input string
-    j find_semicolon      # Jump back to the start of the loop
+    j find_semicoloonn      # Jump back to the start of the loop
 
 increment_counterrr:
     addiu $t2, $t2, 1     # Increment the semicolon counter
     addiu $a0, $a0, 1     # Move past the semicolon
     li $t3, 2             # We're looking for the second semicolon
-    beq $t2, $t3, start_copying # If we've found two semicolons, start copying
-    j find_semicolon      # Otherwise, keep looking for semicolons
+    beq $t2, $t3, copy_testName # If we've found two semicolons, start copying
+    j find_semicoloonn      # Otherwise, keep looking for semicolons
 
-start_copying:
+copy_testName:
 
     lb $t0, 0($a0)        # Load the next character from the input string into $t0
-    beq $t0, ' ', skipSpace # Check for the space character
-    beq $t0, '\n', ReturnValues # Check for the end of the line
+    beq $t0, ' ', skipTHESpace # Check for the space character
+    beq $t0, '\n', ENDofLine # Check for the end of the line
 
     sb $t0, 0($a1)        # Store the character in the output string
     addiu $a0, $a0, 1     # Move to the next character in the input string
     addiu $a1, $a1, 1     # Move to the next position in the output string
-    j start_copying       # Jump back to the start of the copy loop
+    j copy_testName       # Jump back to the start of the copy loop
 
-skipSpace:
+skipTHESpace:
     addiu $a0, $a0, 1     # Move to the next character in the input string
-   j start_copying
+   j copy_testName
 
 
 
@@ -3671,12 +3673,12 @@ skipSpace:
   beq $t0, ' ', GetUniqeValueOfTestName # Check for the end of the string
   
   # sum the ascii values of the test name to choose the test value to calculate the average
-    beq $t0, ',', get_type_of_test # If colon, have unique value for each test name 
+    beq $t0, ',', extractTestType # If colon, have unique value for each test name 
     addu $t3, $t3, $t0     # Add the ASCII value to the sum for test name comparison
     
     jal GetUniqeValueOfTestName
 
-get_type_of_test:
+extractTestType:
 
     addiu $t2, $t2, 1     # Increment the semicolon counter
 
@@ -3699,31 +3701,31 @@ get_type_of_test:
     Hgb_test:
         li $t4, 1
         addiu $s1, $s1, 1
-        addiu $a0, $a0, 1 # skip comma 
-        j find_semicolon
+        addiu $a0, $a0, 1 
+        j find_semicoloonn
 
     BGT_test:
         li $t4, 2
         addiu $s2, $s2, 1
         addiu $a0, $a0, 1 
-        j find_semicolon
+        j find_semicoloonn
 
     LDL_test:
         li $t4, 3
         addiu $s3, $s3, 1
         addiu $a0, $a0, 1
-        j find_semicolon
+        j find_semicoloonn
 
     BPT_test:
         li $t4, 4
         addiu $s4, $s4, 1
         addiu $a0, $a0, 1
-        j find_semicolon    
+        j find_semicoloonn    
 
 #-----------------------------------end of Get return uniqe value in t4 according to the test name------------------------
 
 
-ReturnValues:
+ENDofLine:
 
             move $t7, $a0          # save the start of the next line
             sb $t0, 0($a1)        # Store \n in the output string for use it for termination
@@ -3735,14 +3737,14 @@ ReturnValues:
 	#loop to check outupt string if it has dot or not
 
           la $a0, outputString
-          check_dot:
+          checkDOT:
                     lb $t0, 0($a0)        # Load the next character from the output string into $t0
                     beq $t0, '.', dot_found # If dot, jump to dot_found
-                    beq $t0, '\n', no_dot_found # If newline, jump to no_dot_found
+                    beq $t0, '\n', DOTnotfound # If newline, jump to DOTnotfound
                     addiu $a0, $a0, 1      # Move to the next character in the output string
-                    j check_dot            # Jump back to the start of the loop
+                    j checkDOT            # Jump back to the start of the loop
 
-          no_dot_found:
+          DOTnotfound:
                     li $t1, 0x2E          # ASCII value of '.'
                     sb $t1, 0($a0)        # Add a decimal point to the end of the output string
                     addiu $a0, $a0, 1     # Move to the next position in the output string
@@ -3755,9 +3757,7 @@ ReturnValues:
                     sb $t1, 0($a0)        # Add a newline character after the decimal point
                    
 
-           dot_found:  # don't do anything
-           
-           
+           dot_found:  # continue
            
            
             beq $t4, 1, Hgb_test_type
@@ -3767,7 +3767,7 @@ ReturnValues:
 
             Hgb_test_type:
                         la $a0, outputString   # Load address of the output string into $a0
-                        jal parseString        # Jump to the string parsing function
+                        jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         # f1 will have the float value of the test result
                         j doneConvertion
@@ -3775,7 +3775,7 @@ ReturnValues:
 
             BGT_test_type:
                         la $a0, outputString   # Load address of the output string into $a0
-                        jal parseString        # Jump to the string parsing function
+                        jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         # f1 will have the float value of the test result
 			            j doneConvertion            
@@ -3783,14 +3783,14 @@ ReturnValues:
 
             LDL_test_type:
                         la $a0, outputString   # Load address of the output string into $a0
-                        jal parseString        # Jump to the string parsing function
+                        jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         # f1 will have the float value of the test result
                         j doneConvertion	
                         		
             BPT_test_type: 
                         la $a0, outputString   # Load address of the output string into $a0
-                        jal parseString        # Jump to the string parsing function
+                        jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         # f1 will have the float value of the test result
 
@@ -3814,7 +3814,7 @@ doneConvertion:
 
 #-------------------------------------string to float conversion --------------------------------------------
 
-parseString:
+parseeString:
     # Initialize variables
     li $t1, 0              # Will hold the integer part
     li $t2, 0              # Will hold the fractional part
