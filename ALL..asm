@@ -104,6 +104,7 @@ eachFLOAT: .asciiz "EACH Float: \n"
 ACCUMFLOAT: .asciiz "ACCUMFLOAT: \n"
 
 outputString: .space 50
+second_outputString: .space 50 #to save the second reading of BPT result
 
 messageHgb: .asciiz "Average Hgb: "
 messageBGT: .asciiz "Average BGT: "
@@ -1912,6 +1913,7 @@ average_test_value:
                         		
             BPT_test_sum: 
                         add.s $f23, $f23, $f1
+                        add.s $f24, $f24, $f5 #second reading
                          beq $s7, 1, find_the_avg  # if s7 = 1 mean done file reading
                         j get_values_from_line
 
@@ -3752,10 +3754,56 @@ ENDofLine:
 	#loop to check outupt string if it has dot or not
 
           la $a0, outputString
+
+
+
+          checkBackSlash: #loop to check outupt string if it has backslash or not (second reading)
+                lb $t0, 0($a0)        # Load the next character from the output string into $t0
+                beq $t0, '/', backSlash_found # If /, jump to backSlash_found
+                beq $t0, '\n', checkDOT # If newline, jump to DOTnotfound
+                beq $t0, '\0', checkDOT # If null terminator, jump to DOTnotfound
+                addiu $a0, $a0, 1      # Move to the next character in the output string
+                j checkBackSlash            # Jump back to the start of the loop
+
+            backSlash_found:
+            #120/80
+            # if the / is found i want to svae the output string till / only so it has 120 in 
+            #after the / and until the /n or /0 i want to save it in another string to convert it to float called second_outputString
+
+            # save the output string till /
+            la $a0, outputString
+            la $a1, outputString
+
+            la $a3,second_outputString
+
+            copyTillSlash:
+                lb $t0, 0($a0)        # Load the next character from the output string into $t0
+                beq $t0, '/', copyTillSlash_done # If /, jump to copyTillSlash_done
+                sb $t0, 0($a1)        # Store the character in the second output string
+                addiu $a0, $a0, 1      # Move to the next character in the output string
+                addiu $a1, $a1, 1      # Move to the next character in the second output string
+                j copyTillSlash            # Jump back to the start of the loop
+
+            copyTillSlash_done:
+            j checkDOT
+            lb $t0, 1($a0)        # Load the next character from the output string into $t0 
+            beq $t0, '\n', checkDOT # If newline, jump to DOTnotfound
+            beq $t0, '\0', checkDOT # If null terminator, jump to DOTnotfound
+
+            sb $t0, 0($a3)        # Store the character in the second output string
+            addiu $a0, $a0, 1      # Move to the next character in the output string
+            addiu $a3, $a3, 1      # Move to the next character in the second output string
+            j copyTillSlash_done            # Jump back to the start of the loop
+
+
+
+            la $a0, outputString
+
+
           checkDOT:
                     lb $t0, 0($a0)        # Load the next character from the output string into $t0
-                    beq $t0, '.', dot_found # If dot, jump to dot_found
-                    beq $t0, '\n', DOTnotfound # If newline, jump to DOTnotfound
+                    beq $t0, '.', dot_found2 # If dot, jump to dot_found
+                    beq $t0, '\n', DOTnotfound2 # If newline, jump to DOTnotfound
                     addiu $a0, $a0, 1      # Move to the next character in the output string
                     j checkDOT            # Jump back to the start of the loop
 
@@ -3774,6 +3822,38 @@ ENDofLine:
 
            dot_found:  # continue
            
+            beq $t4, 4, checkDOT22 # If the test type is BPT, jump to checkDOT2
+            beq $t4, 1, Hgb_test_type
+            beq $t4, 2, BGT_test_type
+            beq $t4, 3, LDL_test_type
+
+
+        checkDOT22:
+        la $a0, second_outputString   # Load address of the output string into $a0
+
+
+          checkDOT2:
+                    lb $t0, 0($a0)        # Load the next character from the output string into $t0
+                    beq $t0, '.', dot_found2 # If dot, jump to dot_found
+                    beq $t0, '\n', DOTnotfound2 # If newline, jump to DOTnotfound
+                    addiu $a0, $a0, 1      # Move to the next character in the output string
+                    j checkDOT2            # Jump back to the start of the loop
+
+          DOTnotfound2:
+                    li $t1, 0x2E          # ASCII value of '.'
+                    sb $t1, 0($a0)        # Add a decimal point to the end of the output string
+                    addiu $a0, $a0, 1     # Move to the next position in the output string
+                    # add zero value after the decimal point
+                    li $t1, 0x30          # ASCII value of '0'
+                    sb $t1, 0($a0)        # Add a zero after the decimal point
+                    addiu $a0, $a0, 1     # Move to the next position in the output string
+                    # add \n value after the decimal point
+                    li $t1, 0x0A          # ASCII value of '\n'
+                    sb $t1, 0($a0)        # Add a newline character after the decimal point
+                   
+
+           dot_found2:  # continue
+
            
             beq $t4, 1, Hgb_test_type
             beq $t4, 2, BGT_test_type
@@ -3807,6 +3887,12 @@ ENDofLine:
                         la $a0, outputString   # Load address of the output string into $a0
                         jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
+                        mov.s $f5, $f1 # save the value of the test result in f5
+
+                        la $a0, second_outputString   # Load address of the output string into $a0
+                        jal parseeString        # Jump to the string parsing function
+                        jal convertPartsToFloatAndPrint
+                         
                         # f1 will have the float value of the test result
 
 
