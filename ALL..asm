@@ -90,6 +90,7 @@ comma_space: .asciiz ", "
 
 # Buffer to hold the concatenated string
 output_string: .space 256  # Adjust the size as needed
+outputStringg: .space 256  # Adjust the size as needed #second output string
 
 #################################################################################################3
 ####1201139
@@ -1018,7 +1019,7 @@ check_if_test_isNormal:
                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
                            bc1t ResultUNnormal   # If the test result is less than the lower bound, branch to ResultUNnormal
 
-                           c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
+                           c.lt.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
                            bc1t ResultUNnormal   # If the test result is greater than the upper bound, branch to ResultUNnormal
                            
                            move $a0, $t9          # Load the address of the start of the line into $a0
@@ -1044,10 +1045,10 @@ check_if_test_isNormal:
                             lwc1 $f4, upperBoundSystolicBPT # Load the upper bound value is 120.0
                             lwc1 $f3, upperBoundDiastolicBPT # Load the upper bound value is 80.0
 
-                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
+                            c.lt.s $f4, $f5         # Compare the test result in $f1 with the lower bound $f3
                             bc1t ResultUNnormal   # If the test result is less than the lower bound, branch to ResultUNnormal
 
-                            c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
+                            c.le.s $f3, $f1         # Compare the test result in $f1 with the upper bound $f4
                             bc1t ResultUNnormal   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
                             move $a0, $t9          # Load the address of the start of the line into $a0
@@ -1655,10 +1656,10 @@ check_test_resultUnnormal:
                             lwc1 $f4, upperBoundSystolicBPT # Load the upper bound value is 120.0
                             lwc1 $f3, upperBoundDiastolicBPT # Load the upper bound value is 80.0
 
-                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
+                            c.lt.s $f3, $f1         # Compare the test result in $f1 with the lower bound $f3
                             bc1t UNnormalPrinting   # If the test result is less than the lower bound, branch to ResultUNnormal
 
-                            c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
+                            c.le.s $f4, $f5         # Compare the test result in $f1 with the upper bound $f4
                             bc1t UNnormalPrinting   # If the test result is greater than the upper bound, branch to ResultUNnormal
 
 
@@ -3756,16 +3757,24 @@ ENDofLine:
           la $a0, outputString
 
 
+        checkBackSlash: #loop to check outupt string if it has backslash or not (second reading)
+                lb $t0, 0($a0)        # Load the next character from the output string into $t0
+                beq $t0, '/', backSlash_found # If /, jump to backSlash_found
+                beq $t0, '\n', checkDOT # If newline, jump to DOTnotfound
+                beq $t0, '\0', checkDOT # If null terminator, jump to DOTnotfound
+                addiu $a0, $a0, 1      # Move to the next character in the output string
+                j checkBackSlash            # Jump back to the start of the loop
 
 
 
-            la $a0, outputString
+           la $a0, outputString
 
 
           checkDOT:
                     lb $t0, 0($a0)        # Load the next character from the output string into $t0
                     beq $t0, '.', dot_found # If dot, jump to dot_found
                     beq $t0, '\n', DOTnotfound # If newline, jump to DOTnotfound
+                    beq $t0, '\0', DOTnotfound # If null terminator, jump to DOTnotfound
                     addiu $a0, $a0, 1      # Move to the next character in the output string
                     j checkDOT            # Jump back to the start of the loop
 
@@ -3780,7 +3789,102 @@ ENDofLine:
                     # add \n value after the decimal point
                     li $t1, 0x0A          # ASCII value of '\n'
                     sb $t1, 0($a0)        # Add a newline character after the decimal point
+                    j dot_found
                    
+
+
+        backSlash_found:
+            #120/80
+            # if the / is found i want to svae the output string till / only so it has 120 in 
+            #after the / and until the /n or /0 i want to save it in another string to convert it to float called second_outputString
+
+            # save the output string till /
+            la $a0, outputString
+            la $a1, outputStringg
+
+            la $a3,second_outputString
+
+            copyTillSlash:
+                lb $t0, 0($a0)        # Load the next character from the output string into $t0
+                beq $t0, '/', copyTillSlash_done # If /, jump to copyTillSlash_done
+                sb $t0, 0($a1)        # Store the character in the second output string
+                addiu $a0, $a0, 1      # Move to the next character in the output string
+                addiu $a1, $a1, 1      # Move to the next character in the second output string
+                j copyTillSlash            # Jump back to the start of the loop
+
+            
+            copyTillSlash_done:
+            j checkDOT2
+
+            copy:
+            lb $t0, 1($a0)        # Load the next character from the output string into $t0 
+            beq $t0, '\n', checkDOT33 # If newline, jump to DOTnotfound
+            beq $t0, '\0', checkDOT33 # If null terminator, jump to DOTnotfound
+
+
+            #continue for the below reading
+
+            sb $t0, 0($a3)        # Store the character in the second output string
+            addiu $a0, $a0, 1      # Move to the next character in the output string
+            addiu $a3, $a3, 1      # Move to the next character in the second output string
+            j copy            # Jump back to the start of the loop
+
+
+
+            
+            la $a1, outputStringg   # Load address of the output string into $a0
+
+          checkDOT2:
+
+
+                    lb $t0, 0($a1)        # Load the next character from the output string into $t0
+                    beq $t0, '.', copy # If dot, jump to copy to get the second reading 
+                    beq $t0, '\n', DOTnotfound2 # If newline, jump to DOTnotfound
+                    beq $t0, '\0', DOTnotfound2 # If newline, jump to DOTnotfound
+
+                    addiu $a1, $a1, 1      # Move to the next character in the output string
+                    j checkDOT2            # Jump back to the start of the loop
+
+          DOTnotfound2:
+                    li $t1, 0x2E          # ASCII value of '.'
+                    sb $t1, 0($a1)        # Add a decimal point to the end of the output string
+                    addiu $a1, $a1, 1     # Move to the next position in the output string
+                    # add zero value after the decimal point
+                    li $t1, 0x30          # ASCII value of '0'
+                    sb $t1, 0($a1)        # Add a zero after the decimal point
+                    addiu $a1, $a1, 1     # Move to the next position in the output string
+                    # add \n value after the decimal point
+                    li $t1, 0x0A          # ASCII value of '\n'
+                    sb $t1, 0($a1)        # Add a newline character after the decimal point
+                    j copy #also return to copy to get the second reading
+                   
+
+            checkDOT33:
+            la $a3, second_outputString   # Load address of the output string into $a0
+
+
+          checkDOT3:
+                    lb $t0, 0($a3)        # Load the next character from the output string into $t0
+                    beq $t0, '.', dot_found # If dot, jump to dot_found
+                    beq $t0, '\n', DOTnotfound3 # If newline, jump to DOTnotfound
+                    beq $t0, '\0', DOTnotfound3 # If newline, jump to DOTnotfound
+                    addiu $a3, $a3, 1      # Move to the next character in the output string
+                    j checkDOT3            # Jump back to the start of the loop
+
+          DOTnotfound3:
+                    li $t1, 0x2E          # ASCII value of '.'
+                    sb $t1, 0($a3)        # Add a decimal point to the end of the output string
+                    addiu $a3, $a3, 1     # Move to the next position in the output string
+                    # add zero value after the decimal point
+                    li $t1, 0x30          # ASCII value of '0'
+                    sb $t1, 0($a3)        # Add a zero after the decimal point
+                    addiu $a3, $a3, 1     # Move to the next position in the output string
+                    # add \n value after the decimal point
+                    li $t1, 0x0A          # ASCII value of '\n'
+                    sb $t1, 0($a3)        # Add a newline character after the decimal point
+
+
+
 
            dot_found:  # continue
            
@@ -3815,14 +3919,14 @@ ENDofLine:
                         j doneConvertion	
                         		
             BPT_test_type: 
-                        la $a0, outputString   # Load address of the output string into $a0
+                        la $a0, outputStringg   # Load address of the output string into $a0
                         jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         mov.s $f5, $f1 # save the value of the test result in f5
 
-                        #la $a0, second_outputString   # Load address of the output string into $a0
-                        #jal parseeString        # Jump to the string parsing function
-                        #jal convertPartsToFloatAndPrint
+                        la $a0, second_outputString   # Load address of the output string into $a0
+                        jal parseeString        # Jump to the string parsing function
+                        jal convertPartsToFloatAndPrint
                          
                         # f1 will have the float value of the test result
 
