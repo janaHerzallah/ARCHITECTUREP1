@@ -1,10 +1,11 @@
    .data
-dashes_prompt: .asciiz "\n______________________________________________\n"  
-welcome_prompt: .asciiz "Welcome to Medical Test Management System"      
-file_path_prompt: .asciiz "\nEnter your file path:\n "
+dashes_prompt: .asciiz "--------------------------------------------\n"  
+welcome_prompt: .asciiz "Welcome to Medical Test Management System\n"      
+file_path_prompt: .asciiz "Enter the file path:\n "
 filename: .space 256    # Allocate space for file path
 file_not_found_msg: .asciiz "File not found or path incorrect. Please try again.\n"
 file_contents: .asciiz "\nMedical file contents:\n"
+
 
 buffer:   .space 2000   # Buffer to store file contents
 new_buffer:   .space 2000   # Buffer to store file contents
@@ -35,20 +36,6 @@ continue_or_return_menu: .asciiz "Enter 'c' to continue or 'm' to return to the 
 # Prompt for invalid user input
 invalid_input_message: .asciiz "Invalid input. Please enter 'c' to continue, 'm' to return to the menu:\n "
 
-# Prompt for user input to continue or return to menu after successful update
-delete_success_message: .asciiz "\n\nThe test deleted successfully.\nWould you like to continue or return to menu?\n"
-
-
-# successful addition
-add_success_message: .asciiz "\n\nThe test added successfully."
-
-#file contents before addition
-before_add_success_message: .asciiz "The file contents before addition."
-
-#file contents before addition
-after_add_success_message: .asciiz "The file contents after addition."
-
-
 
 
 
@@ -64,9 +51,7 @@ menu_prompt: .asciiz "\n\nMedical Test System Menu\n1. Add a new medical test\n2
 invalid_choice_msg: .asciiz "\nInvalid choice. Please enter a number between 1 and 7.\n"
 
 patient_id_prompt: .asciiz "\nEnter patient ID, make sure the id is contains 7 integer digits :\n"
-invalid_patient_id_msg: .asciiz "\nPlease enter a valid 7-digit numeric patient ID.\n"
-invalid_patient_year_msg: .asciiz "\nPlease enter a valid 4-digit numeric year.\n"
-invalid_patient_month_msg: .asciiz "\nPlease enter a valid 2-digit numeric month between (1 -12).\n"
+invalid_patient_id_msg: .asciiz "Please enter a valid 7-digit numeric patient ID.\n"
 patient_id: .space 20
 test_value_prompt: .asciiz "\nEnter test name: "
 
@@ -144,18 +129,10 @@ zero_float: .float 0.0   # Define a floating point zero constant in data segment
     enteredID: .space 11  # Buffer FOR ENTERED ID
     error_msg: .asciiz "Failed to open the file.\n"
     
-    user_test_new_value: .word 0
-
-
-
-    found_unnormal_test: .asciiz "The unnormal test is found successfully.\n"
-    not_found_recorde: .asciiz "The test recorde is not found in the file.\n Please try again.\n"
-    bool_found: .word 0
     
 #end of normal and unnormal test ---------------------
 
-
-
+###############################################################################
         .text
         .globl main
 
@@ -224,6 +201,9 @@ file_open_failed:
 file_readed_succesfully:
 
 
+  
+ 
+ 
  
 
  
@@ -246,7 +226,6 @@ enter_valid_choice:
         beq $v0, 5, update_test
         beq $v0, 6, delete_test
         beq $v0, 7,end_programm
-        beq $v0, 8, search_unnormal_tests_by_input_test
 
         # Invalid choice
         li $v0, 4
@@ -283,7 +262,7 @@ read_loop:
         li $v0, 14              # syscall code for read file
         move $a0, $s0           # file descriptor
         la $a1, buffer          # load address of buffer
-        li $a2, 2000             # maximum number of bytes to read
+        li $a2, 256             # maximum number of bytes to read
         syscall
         
 
@@ -322,16 +301,24 @@ end_read:
 
 # 1) enter patient id
 
+
 # ask user to enter patient id
+
+
+
 
 	li $v0, 4            # Print string syscall
 	la $a0, patient_id_prompt
 	syscall
 
+# Save register values onto the stack
+    subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
 
+    sw $t0, 4($sp)         # Save $a3   
 
-jal validate_id
+    jal validate_id
 
+    lw $t0, 4($sp)  
 
 # Append patient ID to output_string
 	move $s0, $zero       # Initialize index for output_string
@@ -345,12 +332,12 @@ jal validate_id
 	addi $s2, $s2, 1        # Increment string length counter
 
 
-addi $s1, $s1, 1           # Increment index for output_string
+    addi $s1, $s1, 1           # Increment index for output_string
 
 
 
         
-li $t0 ,0
+
 append_loop_id:
     lb $t0, patient_id($s0)    # Load byte from patient_id
     beq $t0, 10, end_append_id # Check if byte is newline character
@@ -363,123 +350,28 @@ append_loop_id:
 end_append_id:
 
 # Append ": " after patient ID
-li $t0, ':'              # Load colon character
-sb $t0, 0($s1)           # Store colon character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ':'              # Load colon character
+    sb $t0, 0($s1)           # Store colon character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
+    # Prompt user for test name
+    li $v0, 4
+    la $a0, test_value_prompt
+    syscall
 
-# 2) choose patient test name
-
-# ask user to enter patient id
-
- # Display the menu prompt
-    li $v0, 4          # syscall code for print_string
-    la $a0, prompt     # load address of prompt string
-    syscall            # print the prompt
-    
-   
- enter_valid_optionn:
-    # Get user input
-    li $v0, 5          # syscall code for read_int
-    syscall            # read the user's choice into $v0
-
-    la $t0, test_name
-    # Check the user's choice and store the corresponding test name
-    beq $v0, 1, choice_n1 # If the choice is 1, jump to choice_1
-    beq $v0, 2, choice_n2 # If the choice is 2, jump to choice_2
-    beq $v0, 3, choice_n3 # If the choice is 3, jump to choice_3
-    beq $v0, 4, choice_n4 # If the choice is 4, jump to choice_4
-    j invalid_choiceeee     # Otherwise, jump to invalid_choice
-
-choice_n1:
-    
-
-   # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'H'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'g'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'b'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
- 
-    j test_name_chosen        # Jump to end_program to terminate the program
-      
-
-choice_n2:
-    # Store "Blood Glucose Test (BGT)" into test_name_chosen_by_user
-
-    li $t5, 'B'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'G'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'T'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-  
-    j test_name_chosen        # Jump to end_program to terminate the program
-
-choice_n3:
-    # Store "LDL Cholesterol (LDL)" into test_name_chosen_by_user
-     # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'L'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'D'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'L'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-
-    j test_name_chosen          # Jump to end_program to terminate the program
-
-choice_n4:
-    # Store "Blood Pressure Test (BPT)" into test_name_chosen_by_user
-    # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'B'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'P'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'T'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-      
-    j test_name_chosen        # Jump to end_program to terminate the program
-    
-    
-    
-    invalid_choiceeee:
-    # Display an error message for invalid choice
-    li $v0, 4          # syscall code for print_string
-    la $a0, invalid_choice_msg_for_test_type # load address of invalid_choice_msg string
-    syscall            # print the error message
-    j enter_valid_optionn             # Go back to the main menu
-
-test_name_chosen :
-
+    li $v0, 8
+    la $a0, test_name
+    li $a1, 20
+    syscall
 
 # Append test name to output_string
-move $s0, $zero       # Reset index for test_name
-append_loop_test_name:
+    move $s0, $zero       # Reset index for test_name
+    append_loop_test_name:
     lb $t0, test_name($s0)     # Load byte from test_name
-    beq $t0, 0 , end_append_test_name # Check if byte is newline character
+    beq $t0, 10, end_append_test_name # Check if byte is newline character
 
     sb $t0, 0($s1)             # Store byte to output_string
     addi $s0, $s0, 1           # Increment index for test_name
@@ -489,25 +381,26 @@ append_loop_test_name:
 end_append_test_name:
 
 # Append ", " after test name
-li $t0, ','              # Load comma character
-sb $t0, 0($s1)           # Store comma character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ','              # Load comma character
+    sb $t0, 0($s1)           # Store comma character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
+# Prompt user for year
+    li $v0, 4
+    la $a0, year_prompt
+    syscall
 
-# 3) enter date year
+    li $v0, 8
+    la $a0, year_buffer
+    li $a1, 6           # Maximum length of year
+    syscall
 
-
-
-jal validate_year
-
-
-li $t0 ,0
 # Append year to output_string
-move $s0, $zero       # Reset index for year_buffer
-append_loop_year:
+    move $s0, $zero       # Reset index for year_buffer
+    append_loop_year:
     lb $t0, year_buffer($s0)   # Load byte from year_buffer
     beq $t0, 10, end_append_year # Check if byte is newline character
 
@@ -519,21 +412,22 @@ append_loop_year:
 end_append_year:
 
 # Append "-" after year
-li $t0, '-'              # Load dash character
-sb $t0, 0($s1)           # Store dash character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, '-'              # Load dash character
+    sb $t0, 0($s1)           # Store dash character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
-# 4) enter date month
+# Prompt user for month
+    li $v0, 4
+    la $a0, month_prompt
+    syscall
 
-# ask user to enter month
-
-
-
-jal validate_month
+    li $v0, 8
+    la $a0, month_buffer
+    li $a1, 6          # Maximum length of month
+    syscall
 
 # Append month to output_string
-move $s0, $zero       # Reset index for month_buffer
-li $t0 ,0
+    move $s0, $zero       # Reset index for month_buffer
 append_loop_month:
     lb $t0, month_buffer($s0)   # Load byte from month_buffer
     beq $t0, 10, end_append_month # Check if byte is newline character
@@ -546,28 +440,28 @@ append_loop_month:
 end_append_month:
 
 # Append ", " after month
-li $t0, ','              # Load comma character
-sb $t0, 0($s1)           # Store comma character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
-li $t0, ' '              # Load space character
-sb $t0, 0($s1)           # Store space character to output_string
-addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ','              # Load comma character
+    sb $t0, 0($s1)           # Store comma character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
+    li $t0, ' '              # Load space character
+    sb $t0, 0($s1)           # Store space character to output_string
+    addi $s1, $s1, 1         # Increment index for output_string
 
 
 
- li $v0, 4
+    li $v0, 4
     la $a0, result_prompt
     syscall
 
-     li $v0, 8
+    li $v0, 8
     la $a0, test_result
     li $a1, 8            # Maximum length of date
     syscall
     
     
       # Append test result to output_string
-    move $s0, $zero       # Reset index for test_result
-    append_loop_result:
+        move $s0, $zero       # Reset index for test_result
+append_loop_result:
         lb $t0, test_result($s0)   # Load byte from test_result
         beq $t0, 10, end_append_result
         sb $t0, 0($s1)             # Store byte to output_string
@@ -575,45 +469,20 @@ addi $s1, $s1, 1         # Increment index for output_string
         addi $s1, $s1, 1           # Increment index for output_string
         j append_loop_result
 
-    end_append_result:
+end_append_result:
     
-     #Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, add_success_message
+    
+
+# Print output_string
+    li $v0, 4           # Print string syscall
+    la $a0, output_string
     syscall
     
- # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, newline
-    syscall
-    
-     # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, dashes_prompt
-    syscall
- 
-   
-    # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, before_add_success_message
-    syscall
-    
-    
-       # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, dashes_prompt
-    syscall
-    
-    
-      jal readtestFile      # Call the readtestFile function
-   
-    
-   
    
    
    # Calculate the length of the output_string
-move $s2, $zero         # Initialize counter for string length
-la $s3, output_string   # Load address of output_string
+    move $s2, $zero         # Initialize counter for string length
+    la $s3, output_string   # Load address of output_string
 
 calc_string_lengthh:
     lb $t0, 0($s3)      # Load byte from output_string
@@ -642,7 +511,6 @@ end_calc_string_lengthh:
 	syscall
     
     
-
     # Close file
     li $v0, 16           # Close syscall
     move $a0, $s0        # File descriptor
@@ -651,7 +519,10 @@ end_calc_string_lengthh:
     
     #Clear buffer and write file into it again
     
-    
+    # Prompt user for medical data
+    #li $v0, 4            # Print string syscall
+    #la $a0, buffer
+    #syscall
     
     
     # clear_buffer
@@ -661,7 +532,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 2000
    
-   jal clear_loop
+    jal clear_loop
    
    
     # clear_buffer
@@ -671,7 +542,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
     # clear_buffer
@@ -681,7 +552,7 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
    # clear_buffer
@@ -691,17 +562,17 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 20
    
-   jal clear_loop
+    jal clear_loop
    
    
-   # clear_buffer
+    # clear_buffer
     # Load the address of the buffer into a register
     la $t0, year_buffer
     
     # Set the number of bytes to clear
     li $t1, 5
    
-   jal clear_loop
+    jal clear_loop
    
    
     
@@ -712,9 +583,9 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 3
    
-   jal clear_loop
+    jal clear_loop
    
-   
+
    
    # clear_buffer
     # Load the address of the buffer into a register
@@ -723,48 +594,38 @@ end_calc_string_lengthh:
     # Set the number of bytes to clear
     li $t1, 8
    
-   jal clear_loop
-   
-   # clear_buffer
-    # Load the address of the buffer into a register
-    la $t0,  output_string
-    
-    # Set the number of bytes to clear
-    li $t1, 256
-   
-   jal clear_loop
+    jal clear_loop
    
    
    
+    # Prompt user for medical data
+    li $v0, 4            # Print string syscall
+    la $a0, newline
+    syscall
+   
+   
+    jal readtestFile      # Call the readtestFile function
+     
      
        # Prompt user for medical data
     li $v0, 4            # Print string syscall
     la $a0, newline
     syscall
-    
+   
+   
      # Prompt user for medical data
     li $v0, 4            # Print string syscall
-    la $a0, dashes_prompt
+    la $a0, buffer
     syscall
- 
-   
-    # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, after_add_success_message
-    syscall
-      # Prompt user for medical data
-    li $v0, 4            # Print string syscall
-    la $a0, dashes_prompt
-    syscall
-
-    
-      jal readtestFile      # Call the readtestFile function
    
      
 
+
     j menu
     
+    ##########################################################################################################
     
+ #function to clear the any string to reuse it again   
  clear_loop:
     # Store zero (null terminator) at the current address in the buffer
     sb $zero, ($t0)
@@ -781,7 +642,7 @@ end_calc_string_lengthh:
     jr $ra  # Return from the subroutine
 
 
-
+    #############################################################################################################
 
     
 search_test_by_id:
@@ -809,6 +670,7 @@ search_test_by_id:
     j invalid_choiceee
 
 retrieve_all_tests:
+
     # Code to retrieve all patient tests
     
     
@@ -840,9 +702,7 @@ retrieve_all_tests:
     # Initialize the flag register (this to make sure if the id stored to go to the next id
     li $t7, 0
     
-       li $a1, 0
-       li $k0, 0
-
+    li $a1, 0
 
     
 parse_loop:
@@ -862,9 +722,9 @@ parse_loop:
     beq $t7, $zero, continue_parsing
     
     
-    
-    
     # Walk in the buffer until "\n" is found
+
+
 search_newline:
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
@@ -895,6 +755,7 @@ reset_flag:
     j parse_loop
 
 continue_parsing:
+
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
     
@@ -920,6 +781,7 @@ continue_parsing:
     j parse_loop
 
 next_iteration:
+
     # Move to the next byte in the buffer
     addi $a3, $a3, 1
     
@@ -948,6 +810,7 @@ store_id:
     j next_instruction              # Jump to next_instruction
 
 equal_branch:
+
     jal print_specific_line        # Call print_specific_line if $t4 is equal to $t9
 
 next_instruction:
@@ -977,7 +840,6 @@ next_instruction:
 
     # Continue parsing loop
     j parse_loop
-
 
 
       
@@ -1063,8 +925,6 @@ done:
 
 retrieve_abnormal_tests:
     # Code to retrieve all abnormal patient tests
-    
-     # Code to retrieve all abnormal patient tests
     # means normal tests by id 
     
 	####
@@ -1206,12 +1066,10 @@ check_if_test_isNormal:
 
                                                              
                         
-
+    j menu
 	
 	
-    
-    
-    		j search_test_by_id
+	
 
 retrieve_tests_in_period:
     # Code to retrieve tests in a given specific period
@@ -1690,14 +1548,11 @@ return_to_main_menu:
     
  
  
-
+##########################################################################################################################
 search_unnormal_tests:
 
 
-
-
-
- # Prompt user for the test ID
+  # Prompt user for the test ID
     li $v0, 4
     la $a0, IDenteringPrompt
     syscall
@@ -1971,17 +1826,9 @@ gotoNEXTline:
 
 
 
+
+##########################################################################################################
 average_test_value:
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1999,7 +1846,6 @@ average_test_value:
     li $s2, 0 # for count of BGT
     li $s3, 0 # for count of LDL
     li $s4, 0 # for count of BPT
-    
 
     # Initialize floating-point registers with zero
     la $a0, zero_float     # Load the address of the zero_float constant
@@ -2085,7 +1931,6 @@ find_the_avg:
             cvt.s.w $f14, $f14
             mtc1 $s4, $f15  # Convert BPT count to floating-point
             cvt.s.w $f15, $f15
-            
 
             # Divide sum by count to find the average
             div.s $f12, $f20, $f12  # Average for Hgb
@@ -2175,6 +2020,9 @@ find_the_avg:
 
 #----------------------------------------------end of get average test value-----------------------------------------------
 ##############################################             
+
+
+
 
 
 
@@ -3250,27 +3098,12 @@ beq $v1, 109, menu     # If the input is 'e' (ascii value 101), branch to exit_p
 
 
 
- 
- 
+
 
 delete_test:
-
- # Code to update test result
-    
-    
-li $t9,0 #initialize t9 to store patient id input !!used
-li $s4,0 #initialize s4 to be the address to store file test name
-li $v1,0 #initialize v1 to for invalid (id+test type)
-li $s6,0 #this used for loop 23 time
-li $s7,0 #this used as a flag in compare section ( 1 -> string are equal)	
-li $t5,0 #used to store test name from the user   !!used
-li $t6,0 #initialize s7 to store second month input
-li $k0,0 #used to store test name from the user   !!used
-li $k1,0 #initialize s7 to store second month input
-
-
-#----------------enter patient id ---------------------- 
-   
+ # Exit program
+ 
+ 
   # Prompt user for medical data
     li $v0, 4            # Print string syscall
     la $a0, patient_id_prompt
@@ -3283,248 +3116,14 @@ li $k1,0 #initialize s7 to store second month input
     move $t9, $v0        # Move the input integer to $t9
     
     
-#----------------choose test name ---------------------- 
-    
-    
-    
-    #clear  test_name_chosen_by_user  
-    # Load the address of the test_name_chosen_by_user   into a register
-    la $t0, test_name_chosen_by_user  
-    
-    # Set the number of bytes to clear
-    li $t1, 4
-   
-   jal clear_loop
-   
-   
-  
-  
-  
-    # Display the menu prompt
-    li $v0, 4          # syscall code for print_string
-    la $a0, prompt     # load address of prompt string
-    syscall            # print the prompt
-    
-   
+         delete_another_line:
+         
+         move $t0, $zero # $t0 is now zero
+mult $t0, $zero # the result of the multiplication is zero, stored in `lo` and `hi`
+mflo $31       # move the result from `lo` to `lo`, this is effectively a reset
 
- enter_valid_option_delete:
-    # Get user input
-    li $v0, 5          # syscall code for read_int
-    syscall            # read the user's choice into $v0
-
-    la $t0, test_name_chosen_by_user  
-    # Check the user's choice and store the corresponding test name
-    beq $v0, 1, choice_1_del # If the choice is 1, jump to choice_1
-    beq $v0, 2, choice_2_del # If the choice is 2, jump to choice_2
-    beq $v0, 3, choice_3_del # If the choice is 3, jump to choice_3
-    beq $v0, 4, choice_4_del # If the choice is 4, jump to choice_4
-    j invalid_choiceee_del     # Otherwise, jump to invalid_choice
-
-choice_1_del:
-    
-
-   # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'H'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'g'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'b'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-    #----------------enter the date---------------------- 
-
-
-      
-    # Prompt user for the first year
-li $v0, 4            # Print string syscall
-la $a0, year_prompt
-syscall
-
-# Read integer input for the first year from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k0, $v0       # Move the input year to $t10
-
-# Prompt user for the first month
-li $v0, 4            # Print string syscall
-la $a0, month_prompt
-syscall
-
-# Read integer input for the first month from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k1, $v0       # Move the input month to $t11
-    
-
-    j name_chosen_del        # Jump to end_program to terminate the program
-    
-    
-    
-
-choice_2_del:
-    # Store "Blood Glucose Test (BGT)" into test_name_chosen_by_user
-
-    li $t5, 'B'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'G'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'T'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-    #----------------enter the date---------------------- 
-
-
-      
-    # Prompt user for the first year
-li $v0, 4            # Print string syscall
-la $a0, year_prompt
-syscall
-
-# Read integer input for the first year from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k0, $v0       # Move the input year to $t10
-
-# Prompt user for the first month
-li $v0, 4            # Print string syscall
-la $a0, month_prompt
-syscall
-
-# Read integer input for the first month from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k1, $v0       # Move the input month to $t11
-    
-   
-
-    j name_chosen_del        # Jump to end_program to terminate the program
-
-choice_3_del:
-    # Store "LDL Cholesterol (LDL)" into test_name_chosen_by_user
-     # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'L'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'D'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'L'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-    #----------------enter the date---------------------- 
-
-
-      
-    # Prompt user for the first year
-li $v0, 4            # Print string syscall
-la $a0, year_prompt
-syscall
-
-# Read integer input for the first year from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k0, $v0       # Move the input year to $t10
-
-# Prompt user for the first month
-li $v0, 4            # Print string syscall
-la $a0, month_prompt
-syscall
-
-# Read integer input for the first month from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k1, $v0       # Move the input month to $t11
-    
-     
-    j name_chosen_del         # Jump to end_program to terminate the program
-
-choice_4_del:
-    # Store "Blood Pressure Test (BPT)" into test_name_chosen_by_user
-    # Store "Hemoglobin (Hgb)" into test_name_chosen_by_user
-    li $t5, 'B'          # Load the ASCII value of 'H' into $t5
-    sb $t5, 0($t0)       # Store 'H' into the memory location pointed by $t
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'P'          # Load the ASCII value of 'g' into $t5
-    sb $t5, 0($t0)       # Store 'g' into the memory location pointed by $t0
-    addi $t0, $t0, 1     # Increment the address in $t0
-
-    li $t5, 'T'          # Load the ASCII value of 'b' into $t5
-    sb $t5, 0($t0)       # Store 'b' into the memory location pointed by $t0
-    
-                #----------------enter the date---------------------- 
-
-
-      
-    # Prompt user for the first year
-li $v0, 4            # Print string syscall
-la $a0, year_prompt
-syscall
-
-# Read integer input for the first year from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k0, $v0       # Move the input year to $t10
-
-# Prompt user for the first month
-li $v0, 4            # Print string syscall
-la $a0, month_prompt
-syscall
-
-# Read integer input for the first month from user
-li $v0, 5            # Read integer syscall
-syscall
-move $k1, $v0       # Move the input month to $t11
-
-             
-
-    
-    j name_chosen_del       # Jump to end_program to terminate the program
-    
-    
-    
-    invalid_choiceee_del:
-    # Display an error message for invalid choice
-    li $v0, 4          # syscall code for print_string
-    la $a0, invalid_choice_msg_for_test_type # load address of invalid_choice_msg string
-    syscall            # print the error message
-    j enter_valid_option_delete            # Go back to the main menu
-
- 
-
-name_chosen_del:
-
-
-# Print the content of test_name
-    la $a0, successed_test_type    # Load the address of test_name into $a0
-    li $v0, 4       # syscall code for print_string
-    syscall              # Print the string
-
- # Print the content of test_name    la $a0, test_name_chosen_by_user    # Load the address of test_name into $a0
-     la $a0, test_name_chosen_by_user    # Load the address of test_name into $a0
-    li $v0, 4            # syscall code for print_string
-    syscall              # Print the string
-
-
-# Print a new line
-li $v0, 11         # syscall code for print_character
-li $a0, '\n'       # ASCII value of newline character
-syscall            # print the newline
-
-#---------------test_name_chosen_by_user  ready to use------------------
-
-
-#-----------------------start with  searching about line contains id=id , name=name to update its result ---------------------------         
+# To reset the `t4` register
+move $t4, $zero
         
    # Load the address of the buffer into $a3
     la $a3, buffer
@@ -3533,22 +3132,17 @@ syscall            # print the newline
     li $t0, 0
     
     li $t3, 0x3A    # ASCII value for ':
-     
+      # Load the base address of ids_array into $t5
+      
+    la $t5, ids_array
     
     # Initialize the flag register (this to make sure if the id stored to go to the next id
     li $t7, 0
     
-     li $a1, 0
-     
-     
-       li $t4, 0
-     
-        move $t0, $zero # $t0 is now zero
-mult $t0, $zero # the result of the multiplication is zero, stored in `lo` and `hi`
-mflo $31       # move the result from `lo` to `lo`, this is effectively a reset
+       li $a1, 0
 
     
-iterate_file_lines_part6:
+parse_loopp:
 
 #-----------------------------------
 #start reading id in each line :
@@ -3557,59 +3151,63 @@ iterate_file_lines_part6:
      # Load a byte from memory into $a1
     lb $a1, 0($a3)
     # Check if the byte is null terminator '\0'
-    beq $a1, $zero, end_file_part6  # If null terminator found, end parse loop
+    beq $a1, $zero, menu  # If null terminator found, end parse loop
     
     
-    # Check if flag t7 is 0 ; if it is 0 then extract the id  by going to continue_parsing  and then check if it is equal to the input id
-    #if it is 1  go to the next line to extract new id 
-    beq $t7, $zero, combine_id_part6
+    # Check if flag t7 is set to 1
+    beq $t7, $zero, continue_parsingg
     
     
     
     
     # Walk in the buffer until "\n" is found
-skip_till_newline_part6:
+search_newlinee:
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
     
     # Check if the byte is null terminator '\0'
-    beq $a1, $zero, end_file_part6   # If null terminator found, end parse loop
+    beq $a1, $zero, menu   # If null terminator found, end parse loop
     
     
     # Check if the byte is newline character '\n'
     li $t8, 0x0A    # ASCII value for '\n'
-    beq $a1, $t8, reset_flag_to_compine_new_id_part6    # If newline found, reset flag and continue parsing
+    beq $a1, $t8, reset_flagg   # If newline found, reset flag and continue parsing
     
     # Move to the next byte in the buffer
     addi $a3, $a3, 1
     
-    j skip_till_newline_part6
+   
+    
+    
+    
+    
+    j search_newlinee
 
-reset_flag_to_compine_new_id_part6:
+reset_flagg:
     # Reset flag t7
     li $t7, 0
     
      # Load a byte from memory into $a1
     lb $a1, 0($a3)
     # Check if the byte is null terminator '\0'
-    beq $a1, $zero, end_file_part6  # If null terminator found, end parse loop
+    beq $a1, $zero, menu   # If null terminator found, end parse loop
     
     # Continue parsing loop
-    j iterate_file_lines_part6
+    j parse_loopp
 
-combine_id_part6:
+continue_parsingg:
     # Load a byte from memory into $a1
     lb $a1, 0($a3)
     
-    # Check if the byte is a digit or a (:) colon
+    # Check if the byte is a digit or a colon
     li $t1, 0x30    # ASCII value for '0'
-    beq $a1, $t3, the_id_is_in_t4_part6
+    beq $a1, $t3, store_idd
     
     # Store str
     # Store date
     # Store result
     
-    blt $a1, $t1, next_byte_part6
+    blt $a1, $t1, next_iterationn
     
     # Convert ASCII digit to integer and add to ID
     sub $a1, $a1, $t1  # Convert ASCII to integer
@@ -3620,277 +3218,109 @@ combine_id_part6:
     addi $a3, $a3, 1
     
     # Repeat the loop
-    j iterate_file_lines_part6
+    j parse_loopp
 
-next_byte_part6:
+next_iterationn:
     # Move to the next byte in the buffer
     addi $a3, $a3, 1
     
     # Repeat the loop
-    j iterate_file_lines_part6
+    j parse_loopp
     
   
     
-the_id_is_in_t4_part6:
-
-# Print the content of register t4
-move $a0, $t4      # move the content of t4 into argument register $a0
-li $v0, 1          # syscall code for print_int
-syscall            # print the content of t4
-
-# Print a new line
-li $v0, 11         # syscall code for print_character
-li $a0, '\n'       # ASCII value of newline character
-syscall            # print the newline
+store_idd:
 
 
+    # Each element in the array is 4 bytes (assuming 32-bit integers)
+    sll $t6, $t0, 2      # Multiply the index by 4 (shift left by 2) to account for each integer being 4 bytes
+    
+    # Add the offset to the base address of ids_array
+    add $t5, $t5, $t6   # $t5 now holds the address of ids_array[index]
 
+    # Store the value of $t4 into the memory location pointed to by $t5
+    sw $t4, 0($t5)      # Store the value of $t4 as a word at the calculated memory location
+    
+    
+    
     #brint the line if the id = user input
-      beq $t4, $t9, desired_id_part6     # Branch to equal_branch if $t4 is equal to $t9
+      beq $t4, $t9, equal_branchh     # Branch to equal_branch if $t4 is equal to $t9
     # Code to execute if $t4 is not equal to $t9
-    j next_line_part6             # Jump to next_instruction
+    j next_instructionn              # Jump to next_instruction
 
-desired_id_part6 :
-
-#-----------------------------------
-#extract the test name  ( test name = input test name then go to the update result part)
-#-----------------------------------
+equal_branchh:
 
 # Save register values onto the stack
 subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
 
-sw $t1, 0($sp)         # Save $a3
+sw $a3, 0($sp)         # Save $a3
 sw $t0, 4($sp)         # Save $t0
+sw $t3, 8($sp)         # Save $t3
+sw $t5, 12($sp)        # Save $t5
+sw $t7, 16($sp)        # Save $t7
 
 
- # clear_test_name_from_file 
-    # Load the address of the buffer into a register
-    la $t0, test_name_from_file  
+    jal delete_line        # Call print_specific_line if $t4 is equal to $t9
     
-    # Set the number of bytes to clear
-    li $t1, 4
-   
-   jal clear_loop
-
-# Restore register values from the stack
-
-lw $t0, 4($sp)         # Restore $t0
-lw $t1, 0($sp)         # Restore $a3
-
-
-   
-la $s4, test_name_from_file # Load the address of test_name into $s4
-
-# Move to the test name byte in the buffer
-addi $a3, $a3, 2
-# Load a byte from memory into $a1
-lb $a1, 0($a3)
-sb $a1, 0($s4)  # Store $a1 at the memory location pointed by $s4
-addi $s4, $s4, 1  # Increment the address in $s4
-
-addi $a3, $a3, 1
-# Load a byte from memory into $a1
-lb $a1, 0($a3)
-sb $a1, 0($s4)  # Store $a1 at the memory location pointed by $s4
-addi $s4, $s4, 1  # Increment the address in $s4
-
-addi $a3, $a3, 1
-# Load a byte from memory into $a1
-lb $a1, 0($a3)
-sb $a1, 0($s4)  # Store $a1 at the memory location pointed by $s4
-    
-    
-    # Print the content of test_name
-    la $a0, test_name_from_file    # Load the address of test_name into $a0
-    li $v0, 4            # syscall code for print_string
-    syscall              # Print the string
-    
-    
-    # Print a new line
-li $v0, 11         # syscall code for print_character
-li $a0, '\n'       # ASCII value of newline character
-syscall            # print the newline
-
-
-
-# Load addresses of the strings into registers
-    la $s4, test_name_from_file         # Address of test_name_from_file
-    la $v1, test_name_chosen_by_user    # Address of test_name_chosen_by_user
-# Save register values onto the stack
-subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
-
-sw $t1, 0($sp)         # Save $a3
-sw $t0, 4($sp)         # Save $t0
- # Call the string comparison subroutine
-    jal cmploop
     
 # Restore register values from the stack
-
+lw $t7, 16($sp)        # Restore $t7
+lw $t5, 12($sp)        # Restore $t5
+lw $t3, 8($sp)         # Restore $t3
 lw $t0, 4($sp)         # Restore $t0
-lw $t1, 0($sp)         # Restore $a3
+lw $a3, 0($sp)         # Restore $a3
 
+addi $sp, $sp, 20      # Restore stack pointer
+
+next_instructionn:
     
-      # At this point, the result of the comparison is in $s7
-    # Print appropriate message based on the result
-
-
-    beq $s7, 1, equal_strings_delete_result          # If $v0 is 1, strings are equal
-
-    j next_line_part6 #not equal                      # Jump to end_program to terminate the program
-
-
-
-equal_strings_delete_result:
-
- # Reset $t5, t6 for each line
-    li $t5, 0
-    li $t6, 0
-    
-   # Move to the year byte in the buffer
-    addi $a3, $a3, 3
-     # Load a byte from memory into $a1
-    lb $a1, 0($a3)
+    # Reset $t4 for next ID
+    li $t4, 0
     
     
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t5, $t5, 10   # Multiply current ID by 10
-    add $t5, $t5, $a1  # Add new digit to ID
+    # Continue with the next instruction
     
+    #jal print_specific_line
     
-    # Print the content of $t5
-    li $v0, 1           # System call for print integer
-    move $a0, $t5       # Move the content of $t4 to $a0 for printing
-    syscall
 
-    # Print new line
-    li $v0, 4           # System call for print string
-    la $a0, newline     # Load the address of the new line string
-    syscall
-    
+    # Increment loop counter
+    addi $t0, $t0, 1
     
     
     # Move to the next byte in the buffer
     addi $a3, $a3, 1
-     # Load a byte from memory into $a1
+    
+       # Load a byte from memory into $a1
     lb $a1, 0($a3)
-    
-    
-    
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t5, $t5, 10   # Multiply current ID by 10
-    add $t5, $t5, $a1  # Add new digit to ID
-    
-    
-     # Print the content of $t5
-    li $v0, 1           # System call for print integer
-    move $a0, $t5       # Move the content of $t4 to $a0 for printing
-    syscall
+	
+	# Set flag to indicate an ID has been found
+    li $t7, 1
 
-    # Print new line
-    li $v0, 4           # System call for print string
-    la $a0, newline     # Load the address of the new line string
-    syscall
-    
 
- # Move to the next byte in the buffer
-    addi $a3, $a3, 1
-     # Load a byte from memory into $a1
-    lb $a1, 0($a3)
-    
-    
-    
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t5, $t5, 10   # Multiply current ID by 10
-    add $t5, $t5, $a1  # Add new digit to ID
-    
-     # Print the content of $t5
-    li $v0, 1           # System call for print integer
-    move $a0, $t5       # Move the content of $t4 to $a0 for printing
-    syscall
+    # Continue parsing loop
+    j parse_loopp
 
-    # Print new line
-    li $v0, 4           # System call for print string
-    la $a0, newline     # Load the address of the new line string
-    syscall
-    
-    
-     # Move to the next byte in the buffer
-    addi $a3, $a3, 1
-     # Load a byte from memory into $a1
-    lb $a1, 0($a3)
-    
-  
-    
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t5, $t5, 10   # Multiply current ID by 10
-    add $t5, $t5, $a1  # Add new digit to ID
-    
-     # Print the content of $t5
-    li $v0, 1           # System call for print integer
-    move $a0, $t5       # Move the content of $t4 to $a0 for printing
-    syscall
 
-    # Print new line
-    li $v0, 4           # System call for print string
-    la $a0, newline     # Load the address of the new line string
-    syscall
-    
-    
-#---------------------year is ready---------------------------
-    
-     # Move to the year byte in the buffer
-    addi $a3, $a3, 2
-     # Load a byte from memory into $a1
-    lb $a1, 0($a3)
-    
-    
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t6, $t6, 10   # Multiply current ID by 10
-    add $t6, $t6, $a1  # Add new digit to ID
-    
-    
       
-     # Move to the year byte in the buffer
-    addi $a3, $a3, 1
-     # Load a byte from memory into $a1
-    lb $a1, 0($a3)
-    
-    
-     # Convert ASCII digit to integer and add to ID
-    sub $a1, $a1, $t1  # Convert ASCII to integer
-    mul $t6, $t6, 10   # Multiply current ID by 10
-    add $t6, $t6, $a1  # Add new digit to ID
-    
-    
-    # Print the content of $t5
-    li $v0, 1           # System call for print integer
-    move $a0, $t6       # Move the content of $t4 to $a0 for printing
+    j menu  #to go to choice 2 minu again
+
+
+
+invalid_choicee:
+    # Invalid choice message
+    li $v0, 4
+    la $a0, invalid_choice_msg
     syscall
-
-    # Print new line
-    li $v0, 4           # System call for print string
-    la $a0, newline     # Load the address of the new line string
-    syscall
-    
-#---------------------month is also ready---------------------------
-
-# Check if k0 = t5 and k1 = t6
-beq $k0, $t5, check_k1_del
-j next_line_part6
-
-check_k1_del:
-    beq $k1, $t6, continue_to_delete
-    j next_line_part6
-
-
-
-continue_to_delete:
-li $v1,1
+    j delete_test
+ 
+ 
+                                 
+                                            
+                                                  
+          
+                                                                                                                  
+        
+delete_line:
 
 
  # Initialize registers
@@ -3899,7 +3329,6 @@ li $v1,1
     la $t1, newline    # Load address of newline string
     lb $t1, 0($t1)     # Load byte (newline character) into $t1
     li $t2, 0           # Initialize counter $t2 to 0 to count \n
-    li $k0, 0           # Initialize counter $t2 to 0 to count \n
     
 copy_loop:
     beq $t0 , $zero , skip_line   # this to delete the first line and continue copying others
@@ -4009,7 +3438,9 @@ replace_n:
 exit:
     # Exit replacement
 
-   
+
+
+    
   # Open the output file for writing
 li $v0, 13              # syscall code for open
 la $a0, filename        # load address of file name
@@ -4064,101 +3495,7 @@ li $v0, 4              # System call for print string
 syscall
 
 
-next_line_part6:
-    
-    # Reset $t4 for next ID
-    li $t4, 0
-    
-    
-    # Continue with the next instruction
-    
-    #jal print_specific_line
-    
-
-    # Increment loop counter
-    addi $t0, $t0, 1
-    
-    
-    # Move to the next byte in the buffer
-    addi $a3, $a3, 1
-    
-       # Load a byte from memory into $a1
-    lb $a1, 0($a3)
-	
-	# Set flag to indicate an ID has been found
-    li $t7, 1
-
-
-    # Continue parsing loop
-    j iterate_file_lines_part6
-
-end_file_part6:
-
-
-# Check if v1 is 1
-beq $v1, 1, record_found_part6  # If v0 is 1, branch to record_found
-
-# If v1 is not 1, print message and ask to continue or return to menu
-li $v0, 4                     # Print string syscall
-la $a0, no_record_message     # Load address of message
-syscall
-
-# Ask to continue or return to menu
-li $v0, 4                       # Print string syscall
-la $a0, continue_or_return_menu# Load address of message
-syscall
-
-# Handle user input for continuing or returning to the menu
-
-# Read user input
-li $v0, 12        # Read integer syscall
-syscall
-move $v1, $v0     # Move user input to $v1
-
-handle_input_delete:
-beq $v1, 99, delete_test       # If the input is 'c' (ascii value 99), branch to update_test
-beq $v1, 109, menu             # If the input is 'm' (ascii value 109), branch to menu
-
-
-# If input is invalid, print message and ask again
-li $v0, 4                          # Print string syscall
-la $a0, invalid_input_message     # Load address of message
-syscall
-
-# Ask for input again
-li $v0, 4                       # Print string syscall
-la $a0, continue_or_return_menu # Load address of message
-syscall
-
-# Read user input again
-li $v0, 12         # Read integer syscall
-syscall
-j handle_input_delete     # Jump back to handle user input
-
-record_found_part6:
-
-# Print result updated successfully
-li $v0, 4                        # Print string syscall
-la $a0, delete_success_message # Load address of message
-syscall
-
-# Ask to continue or return to menu
-li $v0, 4                      # Print string syscall
-la $a0, continue_or_exit_menu # Load address of message
-syscall
-
-# Handle user input for continuing or exiting
-
-# Read user input
-li $v0, 12        # Read integer syscall
-syscall
-move $v1, $v0     # Move user input to $v1
-
-beq $v1, 99, delete_test       # If the input is 'c' (ascii value 99), branch to update_test
-beq $v1, 109, menu     # If the input is 'e' (ascii value 101), branch to exit_program
-
-
-
+     j delete_another_line
      
  # string compare loop (just like strcmp)
 cmploop:
@@ -4199,12 +3536,84 @@ end_programm:
         li $v0, 10              # syscall code for exit
         syscall
         
-        
- ########################################
+validate_id:
+
+reenter_id:
+
+
+
+# Save register values onto the stack
+subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
+
+sw $ra, 0($sp)         # Save $a3
+
+
+ # clear_test_name_from_file 
+    # Load the address of the buffer into a register
+    	la $t0, patient_id  
+    
+    # Set the number of bytes to clear
+	li $t1, 10
+   
+	jal clear_loop
+
+lw $ra, 0($sp)         # Restore $ra
+# validate patient id
+
+
+
+
+ li $v0, 8            # Read string syscall
+    la $a0, patient_id
+    li $a1, 20           # Maximum length of patient ID
+    syscall
+	
+	# Initialize counter
+	li $t4, 0    # Counter for string length
+
+# Load the address of the patient ID string into $t5
+	la $t5, patient_id
+
+# Load desired length into $t6
+	li $t6, 7    # Desired length 7 
+
+# Loop to count characters until null terminator
+loop_id_length:
+    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
+    
+        beq $t3, 10, end      # If t3 is newline (ASCII code 10), jump to end
+
+     blt $t3, 48, not_asci      # If t3 is less than 48 ('0'), jump to end
+    bgt $t3, 57, not_asci      # If t3 is greater than 57 ('9'), jump to end
+    
+    
+    addi $t5, $t5, 1 # Increment address to next character
+    addi $t4, $t4, 1 # Increment counter for string lengt
+    j  loop_id_length # Continue loop if length is not yet 7
+    
+
+end:
+    # At this point, $t4 contains the length of the string
+    # If $t4 equals 7, the length is correct
+    # If $t4 is not 7, the length is not correct
  
- 
- 
- #-------------------------Function Return float in F1 also type of Test name for eachline as parameter in a0---------
+     beq $t4, $t6, check_digits   # If length is 7, check if all digits are integers
+     not_asci:
+     li $v0, 4            # Print string syscall
+      la $a0, invalid_patient_id_msg
+	syscall
+     j reenter_id                      # Otherwise, jump back to enter again
+     
+
+check_digits:
+jr $ra
+
+
+
+###############################################################################################################################
+#function area 
+
+#-------------------------Function Return float in F1 also type of Test name for eachline as parameter in a0---------
 
 
 #line_test_values: 
@@ -4351,22 +3760,16 @@ ENDofLine:
         checkBackSlash: #loop to check outupt string if it has backslash or not (second reading)
                 lb $t0, 0($a0)        # Load the next character from the output string into $t0
                 beq $t0, '/', backSlash_found # If /, jump to backSlash_found
-                beq $t0, '\n', lABELtoCheckDOT # If newline, jump to DOTnotfound
-                beq $t0, '\0', lABELtoCheckDOT # If null terminator, jump to DOTnotfound
+                beq $t0, '\n', checkDOT # If newline, jump to DOTnotfound
+                beq $t0, '\0', checkDOT # If null terminator, jump to DOTnotfound
                 addiu $a0, $a0, 1      # Move to the next character in the output string
                 j checkBackSlash            # Jump back to the start of the loop
 
 
 
-        
+           la $a0, outputString
 
 
-
-	lABELtoCheckDOT:
-	
-	   la $a0, outputString
-	   j checkDOT
-		
           checkDOT:
                     lb $t0, 0($a0)        # Load the next character from the output string into $t0
                     beq $t0, '.', dot_found # If dot, jump to dot_found
@@ -4411,11 +3814,10 @@ ENDofLine:
 
             
             copyTillSlash_done:
-            
-            j CHECKDOT22
+            j checkDOT2
 
             copy:
-            lb $t0, 2($a0)        # Load the next character from the output string into $t0 
+            lb $t0, 1($a0)        # Load the next character from the output string into $t0 
             beq $t0, '\n', checkDOT33 # If newline, jump to DOTnotfound
             beq $t0, '\0', checkDOT33 # If null terminator, jump to DOTnotfound
 
@@ -4428,7 +3830,8 @@ ENDofLine:
             j copy            # Jump back to the start of the loop
 
 
-        CHECKDOT22:
+
+            
             la $a1, outputStringg   # Load address of the output string into $a0
 
           checkDOT2:
@@ -4614,624 +4017,3 @@ convertPartsToFloatAndPrint:
 #---------------------------------------End of string to float conversion--------------------------------------------
 
 #---------------------------------------End of Function which returns the type of the test--------------
-
-       
-      
-validate_id:
-
-reenter_id:
-
-
-
-# Save register values onto the stack
-subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
-
-sw $ra, 0($sp)         # Save $a3
-
-
- # clear_test_name_from_file 
-    # Load the address of the buffer into a register
-    	la $t0, patient_id  
-    
-    # Set the number of bytes to clear
-	li $t1, 10
-   
-	jal clear_loop
-
-lw $ra, 0($sp)         # Restore $ra
-# validate patient id
-
-
-
-
- li $v0, 8            # Read string syscall
-    la $a0, patient_id
-    li $a1, 20           # Maximum length of patient ID
-    syscall
-	
-	# Initialize counter
-	li $t4, 0    # Counter for string length
-
-# Load the address of the patient ID string into $t5
-	la $t5, patient_id
-
-# Load desired length into $t6
-	li $t6, 7    # Desired length 7 
-
-# Loop to count characters until null terminator
-loop_id_length:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-    
-        beq $t3, 10, end      # If t3 is newline (ASCII code 10), jump to end
-
-     blt $t3, 48, not_asci      # If t3 is less than 48 ('0'), jump to end
-    bgt $t3, 57, not_asci      # If t3 is greater than 57 ('9'), jump to end
-    
-    
-    addi $t5, $t5, 1 # Increment address to next character
-    addi $t4, $t4, 1 # Increment counter for string lengt
-    j  loop_id_length # Continue loop if length is not yet 7
-    
-
-end:
-    # At this point, $t4 contains the length of the string
-    # If $t4 equals 7, the length is correct
-    # If $t4 is not 7, the length is not correct
- 
-     beq $t4, $t6, id_is_valid  # If length is 7, check if all digits are integers
-     not_asci:
-     li $v0, 4            # Print string syscall
-      la $a0, invalid_patient_id_msg
-	syscall
-     j reenter_id                      # Otherwise, jump back to enter again
-     
-
-id_is_valid:
-
-# Convert patient id string to integer
-li $t9, 0            # Initialize $t9 to store the integer representation of patient id
-
-# Load the address of the patient ID string into $t5
-la $t5, patient_id
-
-# Loop to traverse the patient ID string
-loop_convert_to_int:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-
-    # Check if the current character is the null terminator
-    beq $t3, 10, end_conversion  # If it is, terminate the loop
-    
-    # Convert ASCII digit to integer and update $t9
-    sub $t3, $t3, 48     # Convert ASCII digit to integer
-    mul $t9, $t9, 10     # Multiply existing value by 10 to shift digits
-    add $t9, $t9, $t3    # Add current digit to $t9
-
-    addi $t5, $t5, 1     # Move to the next character
-    j loop_convert_to_int  # Continue loop
-
-end_conversion:
-
-li $t5,0
-
-
-jr $ra
-
-
-
-
-
-
-validate_year:
-
-# Prompt user for month
-li $v0, 4
-la $a0, year_prompt
-syscall
-
-reenter_year:
-
-
-
-# Save register values onto the stack
-subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
-
-sw $ra, 0($sp)         # Save $a3
-
-
- # clear_test_name_from_file 
-    # Load the address of the buffer into a register
-    	la $t0, year_buffer 
-    
-    # Set the number of bytes to clear
-	li $t1, 10
-   
-	jal clear_loop
-
-lw $ra, 0($sp)         # Restore $ra
-# validate year
-
-
- li $v0, 8
-la $a0, year_buffer
-li $a1, 6           # Maximum length of year
-syscall
-
-	
-	# Initialize counter
-	li $t4, 0    # Counter for string length
-
-# Load the address of the patient ID string into $t5
-	la $t5, year_buffer
-
-# Load desired length into $t6
-	li $t6, 4    # Desired length 7 
-
-# Loop to count characters until null terminator
-loop_year_length:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-    
-        beq $t3, 10, end_year      # If t3 is newline (ASCII code 10), jump to end
-
-     blt $t3, 48, not_asci_year     # If t3 is less than 48 ('0'), jump to end
-    bgt $t3, 57, not_asci_year      # If t3 is greater than 57 ('9'), jump to end
-    
-    
-    addi $t5, $t5, 1 # Increment address to next character
-    addi $t4, $t4, 1 # Increment counter for string lengt
-    j  loop_year_length # Continue loop if length is not yet 7
-    
-
-end_year:
-    # At this point, $t4 contains the length of the string
-    # If $t4 equals 7, the length is correct
-    # If $t4 is not 7, the length is not correct
- 
-     beq $t4, $t6, year_is_valid  # If length is 7, check if all digits are integers
-     not_asci_year:
-     li $v0, 4            # Print string syscall
-      la $a0, invalid_patient_year_msg
-	syscall
-     j reenter_year                      # Otherwise, jump back to enter again
-     
-
-year_is_valid:
-
-# Convert patient id string to integer
-li $t8, 0            # Initialize $t9 to store the integer representation of patient id
-li $t3, 0            # Initialize $t9 to store the integer representation of patient id
-# Load the address of the patient ID string into $t5
-la $t5, year_buffer
-
-# Loop to traverse the patient ID string
-loop_convert_year_to_int:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-
-    # Check if the current character is the null terminator
-    beq $t3, 10, end_conversion_year  # If it is, terminate the loop
-    
-    # Convert ASCII digit to integer and update $t9
-    sub $t3, $t3, 48     # Convert ASCII digit to integer
-    mul $t8, $t8, 10     # Multiply existing value by 10 to shift digits
-    add $t8, $t8, $t3    # Add current digit to $t9
-
-    addi $t5, $t5, 1     # Move to the next character
-    j loop_convert_year_to_int  # Continue loop
-
-end_conversion_year:
-
-li $t5,0
-
-jr $ra
-
-
-validate_month:
-
-reenter_month:
-
-# Prompt user for month
-li $v0, 4
-la $a0, month_prompt
-syscall
-
-# Save register values onto the stack
-subi $sp, $sp, 20      # Adjust stack pointer to make space for 5 registers (5 * 4 bytes = 20 bytes)
-
-sw $ra, 0($sp)         # Save $a3
-
-
- # clear_test_name_from_file 
-    # Load the address of the buffer into a register
-    	la $t0, month_buffer 
-    
-    # Set the number of bytes to clear
-	li $t1, 10
-   
-	jal clear_loop
-
-lw $ra, 0($sp)         # Restore $ra
-# validate year
-
-
- li $v0, 8
-la $a0, month_buffer
-li $a1, 4           # Maximum length of year
-syscall
-
-	
-	# Initialize counter
-	li $t4, 0    # Counter for string length
-
-# Load the address of the patient ID string into $t5
-	la $t5, month_buffer
-
-# Load desired length into $t6
-	li $t6, 2    # Desired length 7 
-
-# Loop to count characters until null terminator
-loop_month_length:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-    
-        beq $t3, 10, end_month      # If t3 is newline (ASCII code 10), jump to end
-
-     blt $t3, 48, not_asci_month     # If t3 is less than 48 ('0'), jump to end
-    bgt $t3, 57, not_asci_month      # If t3 is greater than 57 ('9'), jump to end
-    
-    
-    addi $t5, $t5, 1 # Increment address to next character
-    addi $t4, $t4, 1 # Increment counter for string lengt
-    j  loop_month_length # Continue loop if length is not yet 7
-    
-
-end_month:
-    # At this point, $t4 contains the length of the string
-    # If $t4 equals 7, the length is correct
-    # If $t4 is not 7, the length is not correct
- 
-     beq $t4, $t6, month_is_valid  # If length is 7, check if all digits are integers
-     not_asci_month:
-     li $v0, 4            # Print string syscall
-      la $a0, invalid_patient_month_msg
-	syscall
-     j reenter_month                      # Otherwise, jump back to enter again
-     
-
-month_is_valid:
-
-# Convert patient id string to integer
-li $t8, 0            # Initialize $t9 to store the integer representation of patient id
-li $t3, 0 
-# Load the address of the patient ID string into $t5
-la $t5, month_buffer
-
-# Loop to traverse the patient ID string
-loop_convert_month_to_int:
-    lb $t3, 0($t5)   # Load byte from address $t5 into $t3
-
-    # Check if the current character is the null terminator
-    beq $t3, 10, end_conversion_month  # If it is, terminate the loop
-    
-    # Convert ASCII digit to integer and update $t9
-    sub $t3, $t3, 48     # Convert ASCII digit to integer
-    mul $t8, $t8, 10     # Multiply existing value by 10 to shift digits
-    add $t8, $t8, $t3    # Add current digit to $t9
-
-    addi $t5, $t5, 1     # Move to the next character
-    j loop_convert_month_to_int  # Continue loop
-
-end_conversion_month:
-
-blt $t8, 1, not_asci_month     # If month is less than or equal to 12, continue
-bgt $t8, 12, not_asci_month      # If month is less than or equal to 12, continue
-li $t5,0
-
-jr $ra
-
-search_unnormal_tests_by_input_test :
-
-
-
-                #-----------------------------------Selecting the test name--------------------------------
-                   #promt
-                    li $v0, 4
-                    la $a0, prompt
-                    syscall
-
-                    # Read user's choice
-                    li $v0, 5
-                    syscall
-                    move $t0, $v0  # Move user's choice into $t0
-
-                    # Compare user's choice and jump to the corresponding procedure
-
-                    li $t1, 1
-                    beq $t0, $t1, hemoglobin_label_test_value_unnormal
-
-                    li $t1, 2
-                    beq $t0, $t1, blood_glucose_test_label_test_value_unnormal
-
-                    li $t1, 3
-                    beq $t0, $t1, ldl_cholesterol_label_test_value_unnormal
-
-                    li $t1, 4
-                    beq $t0, $t1, blood_pressure_test_label_test_value_unnormal
-
-                  
-                    # If invalid option, show error and go back to menu
-                    li $v0, 4
-                    la $a0, invalid_input_message
-                    syscall
-                    j search_unnormal_tests_by_input_test
-
-                    # load the valu of each test name in user_test_new_value
-
-                    hemoglobin_label_test_value_unnormal:
-                    li $t1, 0x111        # ASCII sum for "Hgb"
-                    sw $t1, user_test_new_value
-                    j goto_unnormal
-                          
-                    
-                    blood_glucose_test_label_test_value_unnormal:
-                    li $t1, 0xDD         # ASCII sum for "BGT"
-                    sw $t1, user_test_new_value
-                    j goto_unnormal
-                           
-                    ldl_cholesterol_label_test_value_unnormal: 
-                    li $t1, 0xDC         # ASCII sum for "LDL"
-                    sw $t1, user_test_new_value
-                    j goto_unnormal
-                    
-                    blood_pressure_test_label_test_value_unnormal:
-                    li $t1, 0xE6         # ASCII sum for "BPT"
-                    sw $t1, user_test_new_value
-                          
-             goto_unnormal: 
-                   
-                #load the buffer address
-                la $a0, buffer # Load the address of the buffer into $a0
-                li $s7, 0 # Initialize the flag to 0
-		
-
-            check_file_test_name_unnormal:
-
-                 move $t9, $a0 # Save the address of the start of the buffer in $t7
-                
-                 li $t5, 0 # reset the value of t5 to 0
-                 jal boolTestNameCheck # f(a0 , user_test_new_value) return equal if t5=1 else not.
-                 beq $t5, 1, printResult_line_if_unnormal # if t5 = 0 mean the test name is not equal to the user_test_new_value if t5 = 1 mean the test name is equal to the user_test_new_value
-
-
-	 	         move $a0, $t9
-                 jal gotoNEXTline
-                 beq $s7, 1, check_founded_test_name_unnormal
-                 j check_file_test_name_unnormal
-
-
-
-            printResult_line_if_unnormal:
-               
-    
-            move $a0, $t9          # Load the address of the start of the line into $a0
-            jal line_test_values # f(a0) retrun F1 = test result in floating point, t4 = type of test, a0 = start of the next line
-
-            #-----------------------------------sum the values of the test result to calculate the average--------------------------------
-            
-            beq $t4, 1, Hgb_test_unnormal_test_name
-            beq $t4, 2, BGT_test_unnormal_test_name
-            beq $t4, 3, LDL_test_unnormal_test_name
-            beq $t4, 4, BPT_test_unnormal_test_name
-
-
-            Hgb_test_unnormal_test_name:
-
-                            lwc1 $f3, lowerBoundHgb # Load the lower bound value, which is 13.8
-                            lwc1 $f4, upperBoundHgb # Load the upper bound value, which is 17.2
-
-                            c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t printIfUnnormalByTestName   # If the test result is less than the lower bound, branch to if_it_unnormal
-
-                            c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t printIfUnnormalByTestName   # If the test result is greater than the upper bound, branch to if_it_unnormal
-
-                            
-                            beq $s7, 1, check_founded_test_name_unnormal  # If the end of the file is reached, return to the menu
-                            j check_file_test_name_unnormal       # Continue to check file IDs							
-                                                        
-                                    
-                    
-            BGT_test_unnormal_test_name:
-
-                           lwc1 $f3, lowerBoundBGT # Load the lower bound value is 70.0
-                           lwc1 $f4, upperBoundBGT # Load the upper bound value is 99.0
-
-                           c.lt.s $f1, $f3         # Compare the test result in $f1 with the lower bound $f3
-                           bc1t printIfUnnormalByTestName   # If the test result is less than the lower bound, branch to if_it_unnormal
-
-                           c.le.s $f4, $f1         # Compare the test result in $f1 with the upper bound $f4
-                           bc1t printIfUnnormalByTestName   # If the test result is greater than the upper bound, branch to if_it_unnormal
-                           
-
-                           beq $s7, 1, check_founded_test_name_unnormal
-                           j  check_file_test_name_unnormal                                        
-
-            LDL_test_unnormal_test_name:
-
- 
-                            lwc1 $f4, upperBoundLDL  # Load the upper bound value of 100.0 into $f3
-                            c.le.s $f4, $f1          # Compare the test result in $f1 with the upper bound in $f3
-                            bc1t printIfUnnormalByTestName    # If $f1 is not less than or equal to $f3 (i.e., $f1 is greater than $f3), branch to end_findNextLine
-                           
-                            beq $s7, 1, check_founded_test_name_unnormal
-                            j  check_file_test_name_unnormal         
-                        		
-            BPT_test_unnormal_test_name: 
-
-                            lwc1 $f4, upperBoundSystolicBPT # Load the upper bound value is 120.0
-                            lwc1 $f3, upperBoundDiastolicBPT # Load the upper bound value is 80.0
-
-                            c.lt.s $f3, $f1         # Compare the test result in $f1 with the lower bound $f3
-                            bc1t printIfUnnormalByTestName   # If the test result is less than the lower bound, branch to ResultUNnormal
-
-                            c.le.s $f4, $f5         # Compare the test result in $f1 with the upper bound $f4
-                            bc1t printIfUnnormalByTestName   # If the test result is greater than the upper bound, branch to ResultUNnormal
-
-
-                            beq $s7, 1, check_founded_test_name_unnormal
-                            j  check_file_test_name_unnormal
-
-              printIfUnnormalByTestName:
-
-                                                    #store in bool_found the value 1 to indicate that the test result is found
-                            li $t1, 1
-                            sw $t1, bool_found
-
-                            move $a0, $t9           # Load the address of the start of the line into $a0
-                            jal printLine             # Jump to printLine to print the data for this line
-                            
-                            beq $s7, 1, menu   # If the end of the file is reached, return to the menu
-                            j check_file_test_name_unnormal       # Continue to check file IDs			
-
-
-
-    
-        check_founded_test_name_unnormal:
-
-            #if the bool_found = 1 mean the test result is found and updated
-            #else the test result is not found and not updated
-
-            lw $t1, bool_found
-            beq $t1, 1, test_result_unnormal_by_test_name
-
-            #if not found the record for update the test result print the message
-
-            #print new line character
-
-            li $v0, 11          # System call for printing a character
-            li $a0, 10          # Load ASCII value of newline ('\n') into $a0
-            syscall
-
-
-            li $v0, 4
-            la $a0, not_found_recorde
-            syscall
-
-            li $v0, 11          # System call for printing a character
-            li $a0, 10          # Load ASCII value of newline ('\n') into $a0
-            syscall
-
-            j menu
-
-            
-      
-        test_result_unnormal_by_test_name:
-
-                li $v0, 11          # System call for printing a character
-                li $a0, 10          # Load ASCII value of newline ('\n') into $a0
-                syscall        
-                
-                li $v0, 4
-                la $a0, found_unnormal_test
-                syscall
-
-                li $v0, 11          # System call for printing a character
-                li $a0, 10          # Load ASCII value of newline ('\n') into $a0
-                syscall
-
-                #reset the value of bool_found to 0
-                li $t1, 0
-                sw $t1, bool_found
-
-                j menu
-        
-
-
-
-j menu
-
-boolTestNameCheck:
-
-            move $t8, $ra # save the return address
-
-    
-            #load the value of the test name to check user_test_new_value to s0
-
-            find_semicolon_for_test_name_check:
-
-                lb $t0, 0($a0)        # Load the next character from the input string into $t0
-                beq $t0, '\0', no_line_to_check # Check for the end of the string
-                beq $t0, ':', check_test_name # If colon, test name matche
-                addiu $a0, $a0, 1     # Move to the next character in the input string
-                j find_semicolon_for_test_name_check      # Jump back to the start of the loop
-
-
-                check_test_name: 
-                li $t3, 0 # rest the value of asscii sum. 
-
-                get_asscii_sum_of_test_name:
-
-                addiu $a0, $a0, 1      # Skip the : character
-                lb $t0, 0($a0)        # Load the next character from the input string into $t0
-                beq $t0, ' ', get_asscii_sum_of_test_name # Check for the end of the string
-                
-                # sum the ascii values of the test name to choose the test value to calculate the average
-                beq $t0, ',', compare_test_name # If colon, have unique value for each test name 
-                addu $t3, $t3, $t0     # Add the ASCII value to the sum for test name comparison
-                    
-                jal get_asscii_sum_of_test_name
-
-                compare_test_name:
-
-                    # Check the sum of the ASCII values to determine the test name
-                    li $t1, 0x111        # ASCII sum for "Hgb"
-                    beq $t3, $t1, Hgb_test_check # If the sum matches "Hgb", jump to Hgb_test
-
-                    li $t1, 0xDD         #  ASCII sum for "BGT"
-                    beq $t3, $t1, BGT_test_check # If the sum matches "BGT", jump to BGT_test
-
-                    li $t1, 0xDC        #  ASCII sum for "LDL"
-                    beq $t3, $t1, LDL_test_check # If the sum matches "LDL", jump to LDL_test
-
-                    li $t1, 0xE6         #  ASCII sum for "BPT"
-                    beq $t3, $t1, BPT_test_check # If the sum matches "BPT", jump to BPT_test
-
-                #return unique value for each test name
-
-                    Hgb_test_check:
-                    la $a0, user_test_new_value   # Load address of the value of the test result into $a0
-                    lw $s0 , 0($a0) # load the value of the test result to s0
-                    # compare the test name with the user_test_new_value
-                    #then return to ra in t8
-                    beq $s0,$t1 , equal_test_name # If the test name matches the user_test_new_value, return 1
-
-                    BGT_test_check:
-                    la $a0, user_test_new_value   # Load address of the value of the test result into $a0
-                    lw $s0 , 0($a0) # load the value of the test result to s0
-                    beq $s0,$t1 , equal_test_name # If the test name matches the user_test_new_value, return 1
-                  
-
-                    LDL_test_check:
-                    la $a0, user_test_new_value   # Load address of the value of the test result into $a0
-                    lw $s0 , 0($a0) # load the value of the test result to s0
-                    beq $s0,$t1 , equal_test_name # If the test name matches the user_test_new_value, return 1
-                  
-                    BPT_test_check:
-                    la $a0, user_test_new_value   # Load address of the value of the test result into $a0
-                    lw $s0 , 0($a0) # load the value of the test result to s0
-                    beq $s0,$t1 , equal_test_name # If the test name matches the user_test_new_value, return 1
-
-
-                    move $ra, $t8 # no match return 0
-                    li $t5, 0
-                    jr $ra
-                    
-
-                    equal_test_name:
-                    li $t5, 1
-                    move $ra, $t8 # restore the return addres
-                    jr $ra
-
-                    no_line_to_check:
-                    li $t5, 0
-                    move $ra, $t8 # restore the return addres
-                    li $s7 , 1 # set the value of s7 to 1 to indicate that the buffer is done.
-                    jr $ra
-                    
