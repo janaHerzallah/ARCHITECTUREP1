@@ -151,6 +151,10 @@ zero_float: .float 0.0   # Define a floating point zero constant in data segment
     found_unnormal_test: .asciiz "The unnormal test is found successfully.\n"
     not_found_recorde: .asciiz "The test recorde is not found in the file.\n Please try again.\n"
     bool_found: .word 0
+    outputString2: .space 50
+
+
+
     
 #end of normal and unnormal test ---------------------
 
@@ -4257,7 +4261,7 @@ start_copying:
     lb $t0, 0($a0)        # Load the next character from the input string into $t0
     beq $t0, ' ', skipSpace # Check for the space character
     beq $t0, '\n', ENDofLine # Check for the end of the line
-    #beq $t0, '\0', ENDofLine # Check for the end of the line
+    beq $t0, '\0', ENDofLine # Check for the end of the line
 
     sb $t0, 0($a1)        # Store the character in the output string
     beq $t0, '/', BPT_handel # If backslash, jump to BPT_handel
@@ -4274,7 +4278,7 @@ skipSpace:
                 li $t1, 0x0a          # ASCII value of '\n'
                 sb $t1, 0($a1)        # Add a '\n' to the output string
                 addiu $a0, $a0, 1     # Move to the next character in the input string
-                addiu $a1, $a1, 1     # Move to the next position in the output string        
+                la $a1, outputString2
                 j start_copying
 
 # -----------------------------------Get return uniqe value in t4 according to the test name-------------------------------- 
@@ -4345,6 +4349,7 @@ extractTestType:
 
 ENDofLine:
 
+            li $t2,0 # rest the value of t2 to 0  for string2.
             move $t7, $a0          # save the start of the next line
             sb $t0, 0($a1)        # Store \n in the output string for use it for termination
 
@@ -4356,7 +4361,7 @@ ENDofLine:
                     lb $t0, 0($a0)        # Load the next character from the output string into $t0
                     beq $t0, '.', dot_found # If dot, jump to dot_found
                     beq $t0, '\n', no_dot_found # If newline, jump to no_dot_found
-                    #beq $t0, '\0', no_dot_found # If newline, jump to no_dot_found
+                    beq $t0, '\0', no_dot_found # If newline, jump to no_dot_found
                     
                     addiu $a0, $a0, 1      # Move to the next character in the output string
                     j check_dot            # Jump back to the start of the loop
@@ -4374,8 +4379,18 @@ ENDofLine:
                     sb $t1, 0($a0)        # Add a newline character after the decimal point
                    
 
-           dot_found:  # don't do anything
+              dot_found:  
+                     bne $t4, 4, skip_this_no_need
+                     beq $t2, 1, skip_this_no_need  #flag to not check the dot again
 
+                     # use t2 for terminate the string2 
+                     #store in t2 the value 1  to not make the loop to check the dot again
+                        li $t2, 1
+                        la $a0, outputString2   # Load address of the output string into $a0
+                        j check_dot
+
+
+                skip_this_no_need:
            
             
            
@@ -4408,14 +4423,12 @@ ENDofLine:
                         j doneConvertion	
                         		
             BPT_test_type: 
-                         la $a0, outputString   # Load address of the output string into $a0
+                        la $a0, outputString   # Load address of the output string into $a0
                         jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
-                        # handle the BPT test result Diastolic Blood Pressure
-                        addiu $a0, $a0, 1      # Move to the next character in the output string to skip the \n of 
-                        lb $t0, 0($a0)         # Load the next byte (character) from the strin
-                        beq $t0, '\0', doneConvertion 
                         mov.s $f5 , $f1
+
+                        la $a0, outputString2 
                         jal parseeString        # Jump to the string parsing function
                         jal convertPartsToFloatAndPrint
                         
