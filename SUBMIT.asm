@@ -1,14 +1,14 @@
    .data
-        dashes_prompt: .asciiz "\n______________________________________________\n"  
-        welcome_prompt: .asciiz "Welcome to Medical Test Management System !!!!\n"      
-        file_path_prompt: .asciiz "\nEnter your file paath:\n "
+        dashes_prompt: .asciiz "\n_______________________________________________________________________________________\n"  
+        welcome_prompt: .asciiz "\nWelcome to our Medical Test Management System !!!!\n"      
+        file_path_prompt: .asciiz "\n Please Enter your file paath:\n "
         filename: .space 256    # Allocate space for file path
         file_not_found_msg: .asciiz "File not found or path incorrect. Please try again.\n"
         file_contents: .asciiz "\nMedical file contents :::::: \n"
         not_valid_id_msg: .asciiz "\nThe ID is not valid. Please try with a valid ID.\n"
         not_valid_id_date_msg: .asciiz "\nThere is no record matching your input. Please make sure about your inputs.\n"
         invalid_input_msg: .asciiz "\nInvalid input. Please enter 'c' or 'm'!!.\n"
-        result_promptt_numeric: .asciiz "Enter result (numeric digits or dot only): "
+        result_prompt_numeric: .asciiz "Enter result (numeric digits or dot only): "
 
 
         buffer:   .space 2000   # Buffer to store file contents
@@ -83,13 +83,13 @@
         patient_id: .space 20
         test_value_prompt: .asciiz "\nEnter test name: "
 
-        year_prompttt: .asciiz "\nEnter year ( just as 4 digits yyyy):"
-        month_prompttt: .asciiz "\nEnter month (just as 2 digits mm): "
-        first_date_promptt: .asciiz "\nEnter the first date as (YYYY-MM)"
-        second_date_promptt: .asciiz "\nEnter the second date as (YYYY-MM)"
+        year_prompt: .asciiz "\nEnter year (as 4 digits yyyy):"
+        month_prompt: .asciiz "\nEnter month (as 2 digits mm): "
+        first_date_prompt: .asciiz "\nEnter the first date (YYYY-MM)"
+        second_date_prompt: .asciiz "\nEnter the second date (YYYY-MM)"
 
 
-        result_promptt: .asciiz "\nEnter the test result please : "
+        result_prompt: .asciiz "\nEnter test result : "
 
 
         test_name: .space 20
@@ -628,7 +628,7 @@ append_loop_result2:
 s7_equal_0:
 
         li $v0, 4
-        la $a0, result_promptt
+        la $a0, result_prompt
         syscall
 
         jal validate_result
@@ -1225,7 +1225,7 @@ retrieve_tests_in_period:
 
             # Prompt user for the first year
             li $v0, 4            # Print string syscall
-            la $a0, first_date_promptt
+            la $a0, first_date_prompt
             syscall
 
             
@@ -1288,7 +1288,7 @@ retrieve_tests_in_period:
 
             # Prompt user for the first year
             li $v0, 4            # Print string syscall
-            la $a0, second_date_promptt
+            la $a0, second_date_prompt
             syscall
 
             #1. enter year
@@ -4863,7 +4863,7 @@ validate_year:
 
 # Prompt user for month
 li $v0, 4
-la $a0, year_prompttt
+la $a0, year_prompt
 syscall
 
 reenter_year:
@@ -4964,7 +4964,7 @@ reenter_month:
 
 # Prompt user for month
 li $v0, 4
-la $a0, month_prompttt
+la $a0, month_prompt
 syscall
 
 move $a0, $ra          # Move the value of $ra to $a0
@@ -5097,7 +5097,7 @@ loop_result_length:
         
         not_valid_result :
          li $v0, 4            # syscall code for printing a string
-   	 la $a0, result_promptt_numeric  # load the address of the prompt message into $a0
+   	 la $a0, result_prompt_numeric  # load the address of the prompt message into $a0
     	syscall              # execute the syscall
         j reenter_result                    
 
